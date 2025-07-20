@@ -161,10 +161,10 @@ class ChatMessageCell: UITableViewCell {
     private func updateAppearanceForMessageType(_ type: MessageType) {
         switch type {
         case .user:
-            messageContainerView.backgroundColor = UIColor.systemBlue
+            messageContainerView.backgroundColor = UIColor.systemGreen
             messageLabel.textColor = .white
             avatarImageView.image = UIImage(systemName: "person.circle.fill")
-            avatarImageView.tintColor = UIColor.systemBlue
+            avatarImageView.tintColor = UIColor.systemGreen
             
         case .bot:
             if traitCollection.userInterfaceStyle == .dark {
@@ -175,7 +175,7 @@ class ChatMessageCell: UITableViewCell {
                 messageLabel.textColor = .black
             }
             avatarImageView.image = UIImage(systemName: "brain.head.profile")
-            avatarImageView.tintColor = UIColor.systemGreen
+            avatarImageView.tintColor = UIColor.systemPurple
         }
     }
     

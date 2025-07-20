@@ -167,7 +167,7 @@ class TabBarButton: UIButton {
             customTitleLabel.textColor = getSelectedTextColor()
             
             // ФІКСОВАНА ширина для всіх виділених кнопок
-            let fixedWidth: CGFloat = 100
+            let fixedWidth: CGFloat = 140
             
             // Анімація розширення
             UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.2, options: [.curveEaseInOut]) {

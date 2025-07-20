@@ -36,7 +36,7 @@ class CustomTabBar: UIView {
         super.didMoveToSuperview()
         // Ініціалізуємо перший таб після того, як view буде додано в ієрархію
         DispatchQueue.main.async {
-            self.selectButton(at: 0)
+            self.selectButtonInternal(at: 0)
         }
     }
     
@@ -97,14 +97,14 @@ class CustomTabBar: UIView {
         
         if index == selectedIndex { return }
         
-        selectButton(at: index)
+        selectButtonInternal(at: index)
         delegate?.didSelectTab(at: index)
         
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
     }
     
-    private func selectButton(at index: Int) {
+    private func selectButtonInternal(at index: Int) {
         guard index < buttons.count else { return }
         
         if selectedIndex < buttons.count && selectedIndex != index {
@@ -114,6 +114,11 @@ class CustomTabBar: UIView {
         selectedIndex = index
         
         buttons[index].setSelected(true)
+    }
+    
+    // Публічний метод для програмного вибору кнопки
+    func selectButton(at index: Int) {
+        selectButtonInternal(at: index)
     }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

@@ -7,12 +7,13 @@
 
 import UIKit
 
-class TabBarController: UITabBarController {
+class TabBarController: UITabBarController, UITabBarControllerDelegate {
     
     private var customTabBar: CustomTabBar!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.delegate = self
         setupCustomTabBar()
         setupViewControllers()
     }
@@ -63,8 +64,16 @@ class TabBarController: UITabBarController {
     
     private func createViewController(_ viewController: UIViewController, title: String) -> UINavigationController {
         let navController = UINavigationController(rootViewController: viewController)
-        navController.navigationBar.prefersLargeTitles = true
+        
+        // Вимикаємо великі заголовки
+        navController.navigationBar.prefersLargeTitles = false
+        
+        // Встановлюємо звичайний заголовок
         viewController.navigationItem.title = title
+        
+        // Додаткові налаштування навігаційного бара (опціонально)
+        navController.navigationBar.isTranslucent = true
+        
         return navController
     }
     
@@ -88,5 +97,17 @@ class TabBarController: UITabBarController {
 extension TabBarController: CustomTabBarDelegate {
     func didSelectTab(at index: Int) {
         selectedIndex = index
+    }
+}
+
+// MARK: - Public Methods for Programmatic Tab Selection
+extension TabBarController {
+    override var selectedIndex: Int {
+        didSet {
+            // Коли selectedIndex змінюється програмно, оновлюємо кастомний таб бар
+            if selectedIndex != oldValue {
+                customTabBar.selectButton(at: selectedIndex)
+            }
+        }
     }
 }
