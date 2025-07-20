@@ -2,7 +2,7 @@
 //  SettingsViewController.swift
 //  Test_Brativnyk
 //
-//  Created by Denys Brativnyk on 20.07.2025.
+//  Created by Denys Brativnyk on 18.07.2025.
 //
 
 import UIKit
@@ -11,19 +11,25 @@ class SettingsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
+        setupUI()
     }
     
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    private func setupUI() {
+        view.backgroundColor = UIColor.systemBackground
+        
+        // Тимчасова лейба для тестування
+        let label = UILabel()
+        label.text = NSLocalizedString("Settings Screen", comment: "")
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 24, weight: .medium)
+        label.textColor = UIColor.label
+        
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
     }
-    */
-
 }
