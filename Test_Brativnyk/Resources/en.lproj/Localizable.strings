@@ -71,6 +71,23 @@
 "country_ca" = "Canada";
 "country_au" = "Australia";
 
+// Settings Screen
+"App Settings" = "App Settings";
+"Rate App" = "Rate App";
+"Share App" = "Share App";
+"Contact Us" = "Contact Us";
+"Version" = "Version";
+"rate_app_message" = "How would you rate our app? Your feedback helps us improve!";
+"thank_you_good_rating" = "Thank you for your positive rating! Would you like to rate us on the App Store?";
+"thank_you_feedback" = "Thank you for your feedback! We'll work hard to improve your experience.";
+"Thank You!" = "Thank You!";
+"Rate on App Store" = "Rate on App Store";
+"share_app_text" = "Check out this amazing app!";
+"contact_us_message" = "You can reach us at: support@example.com";
+"contact_us_fallback_message" = "Could not open the link automatically. You can copy it and open in your browser.";
+"Copy Link" = "Copy Link";
+"Copied!" = "Copied!";
+
 // Bot Responses
 "bot_response_1" = "Hello! How are you?";
 "bot_response_2" = "That's very interesting!";
