@@ -38,6 +38,39 @@
 "Today" = "Today";
 "No messages" = "No messages";
 
+// IP Info Screen
+"ip_address" = "IP Address";
+"location" = "Location";
+"region" = "Region";
+"country" = "Country";
+"timezone" = "Timezone";
+"isp" = "Internet Provider";
+"organization" = "Organization";
+"coordinates" = "Coordinates";
+"loading_ip_info" = "Loading IP information...";
+"failed_to_load_ip_info" = "Failed to load IP information. Please check your internet connection and try again.";
+"retry" = "Retry";
+"reload" = "Reload";
+
+// Network Errors
+"invalid_url_error" = "Invalid URL";
+"no_data_error" = "No data received";
+"decoding_error" = "Failed to parse data";
+
+// Common
+"loading" = "Loading...";
+"error" = "Error";
+"ok" = "OK";
+
+// Countries (add more as needed)
+"country_us" = "United States";
+"country_gb" = "United Kingdom";
+"country_de" = "Germany";
+"country_fr" = "France";
+"country_ua" = "Ukraine";
+"country_ca" = "Canada";
+"country_au" = "Australia";
+
 // Bot Responses
 "bot_response_1" = "Hello! How are you?";
 "bot_response_2" = "That's very interesting!";

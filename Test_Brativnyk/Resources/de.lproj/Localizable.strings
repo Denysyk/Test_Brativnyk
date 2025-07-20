@@ -38,6 +38,39 @@
 "Today" = "Heute";
 "No messages" = "Keine Nachrichten";
 
+// IP Info Screen
+"ip_address" = "IP-Adresse";
+"location" = "Standort";
+"region" = "Region";
+"country" = "Land";
+"timezone" = "Zeitzone";
+"isp" = "Internetanbieter";
+"organization" = "Organisation";
+"coordinates" = "Koordinaten";
+"loading_ip_info" = "IP-Informationen werden geladen...";
+"failed_to_load_ip_info" = "Fehler beim Laden der IP-Informationen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.";
+"retry" = "Wiederholen";
+"reload" = "Neu laden";
+
+// Network Errors
+"invalid_url_error" = "Ungültige URL";
+"no_data_error" = "Keine Daten empfangen";
+"decoding_error" = "Fehler beim Parsen der Daten";
+
+// Common
+"loading" = "Lädt...";
+"error" = "Fehler";
+"ok" = "OK";
+
+// Countries (add more as needed)
+"country_us" = "Vereinigte Staaten";
+"country_gb" = "Vereinigtes Königreich";
+"country_de" = "Deutschland";
+"country_fr" = "Frankreich";
+"country_ua" = "Ukraine";
+"country_ca" = "Kanada";
+"country_au" = "Australien";
+
 // Bot Responses
 "bot_response_1" = "Hallo! Wie geht es Ihnen?";
 "bot_response_2" = "Das ist sehr interessant!";
