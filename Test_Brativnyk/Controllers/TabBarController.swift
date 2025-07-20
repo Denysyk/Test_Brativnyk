@@ -67,6 +67,21 @@ class TabBarController: UITabBarController {
         viewController.navigationItem.title = title
         return navController
     }
+    
+    // MARK: - Public Methods for Keyboard Handling
+    func hideCustomTabBar() {
+        UIView.animate(withDuration: 0.3) {
+            self.customTabBar.alpha = 0
+            self.customTabBar.transform = CGAffineTransform(translationX: 0, y: 100)
+        }
+    }
+    
+    func showCustomTabBar() {
+        UIView.animate(withDuration: 0.3) {
+            self.customTabBar.alpha = 1
+            self.customTabBar.transform = .identity
+        }
+    }
 }
 
 // MARK: - CustomTabBarDelegate

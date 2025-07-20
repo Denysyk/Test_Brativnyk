@@ -84,17 +84,12 @@ class CustomTabBar: UIView {
         addSubview(stackView)
         stackView.translatesAutoresizingMaskIntoConstraints = false
         
-        // --- ПОЧАТОК ВИПРАВЛЕННЯ ---
-        // Замінюємо жорсткі верхній та нижній констрейнти на центрування по вертикалі.
-        // Це дозволяє StackView мати власну висоту (яка визначається висотою кнопок, 48pt),
-        // і ця конструкція вільно розміщується всередині TabBar (70pt).
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            stackView.centerYAnchor.constraint(equalTo: centerYAnchor) // Вирівнюємо по центру
-            // Видалено: topAnchor та bottomAnchor, які викликали конфлікт
+            stackView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
-        // --- КІНЕЦЬ ВИПРАВЛЕННЯ ---
+
     }
     
     @objc private func buttonTapped(_ sender: TabBarButton) {

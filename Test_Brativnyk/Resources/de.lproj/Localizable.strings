@@ -17,3 +17,25 @@
 "IP Info Screen" = "IP-Info-Bildschirm";
 "History Screen" = "Verlauf-Bildschirm";
 "Settings Screen" = "Einstellungen-Bildschirm";
+
+// Chat Screen
+"Type a message..." = "Nachricht eingeben...";
+"Hello! How can I help you today?" = "Hallo! Wie kann ich Ihnen heute helfen?";
+"New Chat" = "Neuer Chat";
+
+// Bot Responses
+"bot_response_1" = "Hallo! Wie geht es Ihnen?";
+"bot_response_2" = "Das ist sehr interessant!";
+"bot_response_3" = "Erzählen Sie mir mehr darüber.";
+"bot_response_4" = "Ich verstehe Ihren Standpunkt.";
+"bot_response_5" = "Das ist eine gute Idee!";
+"bot_response_6" = "Lassen Sie uns über etwas anderes sprechen.";
+"bot_response_7" = "Was denken Sie darüber?";
+"bot_response_8" = "Das ist wirklich cool!";
+"bot_response_9" = "Ich stimme Ihnen zu.";
+"bot_response_10" = "Interessant, erzählen Sie mehr.";
+"bot_response_11" = "Großartig! Was kommt als nächstes?";
+"bot_response_12" = "Hmm, so hatte ich das noch nicht betrachtet.";
+"bot_response_13" = "Fantastisch! Machen Sie weiter.";
+"bot_response_14" = "Das ist wirklich überlegenswert.";
+"bot_response_15" = "Sie haben absolut recht!";

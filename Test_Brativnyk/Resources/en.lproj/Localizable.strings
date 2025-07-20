@@ -17,3 +17,25 @@
 "IP Info Screen" = "IP Info Screen";
 "History Screen" = "History Screen";
 "Settings Screen" = "Settings Screen";
+
+// Chat Screen
+"Type a message..." = "Type a message...";
+"Hello! How can I help you today?" = "Hello! How can I help you today?";
+"New Chat" = "New Chat";
+
+// Bot Responses
+"bot_response_1" = "Hello! How are you?";
+"bot_response_2" = "That's very interesting!";
+"bot_response_3" = "Tell me more about it.";
+"bot_response_4" = "I understand your point of view.";
+"bot_response_5" = "That's a good idea!";
+"bot_response_6" = "Let's talk about something else.";
+"bot_response_7" = "What do you think about this?";
+"bot_response_8" = "That's really cool!";
+"bot_response_9" = "I agree with you.";
+"bot_response_10" = "Interesting, tell me more.";
+"bot_response_11" = "Great! What's next?";
+"bot_response_12" = "Hmm, I hadn't thought about it that way.";
+"bot_response_13" = "Awesome! Keep going.";
+"bot_response_14" = "That's really worth considering.";
+"bot_response_15" = "You're absolutely right!";
