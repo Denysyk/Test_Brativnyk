@@ -22,6 +22,21 @@
 "Type a message..." = "Nachricht eingeben...";
 "Hello! How can I help you today?" = "Hallo! Wie kann ich Ihnen heute helfen?";
 "New Chat" = "Neuer Chat";
+"New" = "Neu";
+"Cancel" = "Abbrechen";
+"Start a new conversation? Current chat will be saved." = "Neue Unterhaltung beginnen? Der aktuelle Chat wird gespeichert.";
+"Start typing to begin conversation" = "Beginnen Sie zu tippen, um das Gespräch zu starten";
+
+// History Screen
+"No Chat History" = "Kein Chat-Verlauf";
+"Start a conversation to see your chat history here" = "Beginnen Sie eine Unterhaltung, um Ihren Chat-Verlauf hier zu sehen";
+"Clear All" = "Alle löschen";
+"Clear All History" = "Gesamten Verlauf löschen";
+"This will permanently delete all your chat conversations. This action cannot be undone." = "Dies löscht dauerhaft alle Ihre Chat-Unterhaltungen. Diese Aktion kann nicht rückgängig gemacht werden.";
+"Delete" = "Löschen";
+"Yesterday" = "Gestern";
+"Today" = "Heute";
+"No messages" = "Keine Nachrichten";
 
 // Bot Responses
 "bot_response_1" = "Hallo! Wie geht es Ihnen?";

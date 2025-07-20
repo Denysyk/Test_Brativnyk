@@ -22,6 +22,21 @@
 "Type a message..." = "Type a message...";
 "Hello! How can I help you today?" = "Hello! How can I help you today?";
 "New Chat" = "New Chat";
+"New" = "New";
+"Cancel" = "Cancel";
+"Start a new conversation? Current chat will be saved." = "Start a new conversation? Current chat will be saved.";
+"Start typing to begin conversation" = "Start typing to begin conversation";
+
+// History Screen
+"No Chat History" = "No Chat History";
+"Start a conversation to see your chat history here" = "Start a conversation to see your chat history here";
+"Clear All" = "Clear All";
+"Clear All History" = "Clear All History";
+"This will permanently delete all your chat conversations. This action cannot be undone." = "This will permanently delete all your chat conversations. This action cannot be undone.";
+"Delete" = "Delete";
+"Yesterday" = "Yesterday";
+"Today" = "Today";
+"No messages" = "No messages";
 
 // Bot Responses
 "bot_response_1" = "Hello! How are you?";

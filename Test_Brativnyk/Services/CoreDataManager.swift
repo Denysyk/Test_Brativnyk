@@ -93,12 +93,11 @@ class CoreDataManager {
     // MARK: - Messages
     
     func saveMessage(_ message: ChatMessage, chatId: String) {
-        // Перевіряємо валідність даних перед збереженням
         guard !message.text.isEmpty,
               !message.id.uuidString.isEmpty,
-              !message.timestamp.timeIntervalSince1970.isNaN,
+              message.timestamp.timeIntervalSince1970.isFinite,
               !chatId.isEmpty else {
-            print("⚠️ Invalid message data, skipping save")
+            print("Invalid message data, skipping save")
             return
         }
         

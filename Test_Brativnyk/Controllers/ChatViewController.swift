@@ -15,12 +15,18 @@ class ChatViewController: UIViewController {
     private let textView = UITextView()
     private let sendButton = UIButton(type: .system)
     private let placeholderLabel = UILabel()
+    private let emptyStateView = UIView()
+    private let emptyStateImageView = UIImageView()
+    private let emptyStateLabel = UILabel()
     
     // MARK: - Properties
     private var messages: [ChatMessage] = []
-    private let chatId = "main_chat"
+    private var chatId = "main_chat"
     private var inputContainerBottomConstraint: NSLayoutConstraint!
+    private var inputContainerHeightConstraint: NSLayoutConstraint!
     private var isTyping = false
+    private let maxTextViewHeight: CGFloat = 120
+    private let minTextViewHeight: CGFloat = 44
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -28,6 +34,7 @@ class ChatViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupKeyboardObservers()
+        setupNavigationBar()
         loadMessages()
     }
     
@@ -63,6 +70,7 @@ class ChatViewController: UIViewController {
         textView.isScrollEnabled = false
         textView.backgroundColor = UIColor.systemBackground
         textView.textContainer.lineFragmentPadding = 0
+        textView.showsVerticalScrollIndicator = false
         inputContainerView.addSubview(textView)
         
         // Placeholder
@@ -73,11 +81,59 @@ class ChatViewController: UIViewController {
         
         // Send Button
         sendButton.setImage(UIImage(systemName: "paperplane.fill"), for: .normal)
-        sendButton.tintColor = UIColor.systemBlue
+        sendButton.tintColor = UIColor.systemGreen
         sendButton.addTarget(self, action: #selector(sendButtonTapped), for: .touchUpInside)
         sendButton.isEnabled = false
         sendButton.alpha = 0.5
         inputContainerView.addSubview(sendButton)
+        
+        // Empty State View
+        setupEmptyStateView()
+        view.addSubview(emptyStateView)
+    }
+    
+    private func setupNavigationBar() {
+        // Кнопка нового чату
+        let newChatButton = UIButton(type: .system)
+        
+        // Створюємо конфігурацію для кнопки
+        var config = UIButton.Configuration.borderless()
+        config.baseForegroundColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
+        config.cornerStyle = .capsule
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+        
+        // Додаємо тільки іконку
+        config.image = UIImage(systemName: "square.and.pencil")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        )
+        
+        newChatButton.configuration = config
+        newChatButton.addTarget(self, action: #selector(newChatButtonTapped), for: .touchUpInside)
+        
+        // Додаємо анімацію при натисканні
+        newChatButton.addTarget(self, action: #selector(newChatButtonTouchDown), for: .touchDown)
+        newChatButton.addTarget(self, action: #selector(newChatButtonTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: newChatButton)
+    }
+    
+    private func setupEmptyStateView() {
+        emptyStateView.backgroundColor = .clear
+        emptyStateView.isHidden = true
+        
+        // Image
+        emptyStateImageView.image = UIImage(systemName: "message")
+        emptyStateImageView.tintColor = UIColor.systemGray3
+        emptyStateImageView.contentMode = .scaleAspectFit
+        emptyStateView.addSubview(emptyStateImageView)
+        
+        // Label
+        emptyStateLabel.text = NSLocalizedString("Start typing to begin conversation", comment: "")
+        emptyStateLabel.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        emptyStateLabel.textColor = UIColor.systemGray2
+        emptyStateLabel.textAlignment = .center
+        emptyStateLabel.numberOfLines = 0
+        emptyStateView.addSubview(emptyStateLabel)
     }
     
     private func setupConstraints() {
@@ -86,9 +142,15 @@ class ChatViewController: UIViewController {
         textView.translatesAutoresizingMaskIntoConstraints = false
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateView.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
         
         // Input Container Bottom Constraint (буде змінюватися при появі клавіатури)
-        inputContainerBottomConstraint = inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -100) // 100 - висота таб-бару + більший відступ
+        inputContainerBottomConstraint = inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -100)
+        
+        // Input Container Height Constraint (буде змінюватися при зміні розміру тексту)
+        inputContainerHeightConstraint = inputContainerView.heightAnchor.constraint(equalToConstant: minTextViewHeight)
         
         NSLayoutConstraint.activate([
             // Table View
@@ -101,7 +163,7 @@ class ChatViewController: UIViewController {
             inputContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             inputContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             inputContainerBottomConstraint,
-            inputContainerView.heightAnchor.constraint(equalToConstant: 44), // Ще менша висота
+            inputContainerHeightConstraint,
             
             // Text View - займає всю ширину контейнера
             textView.topAnchor.constraint(equalTo: inputContainerView.topAnchor),
@@ -118,7 +180,25 @@ class ChatViewController: UIViewController {
             // Placeholder
             placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: 16),
-            placeholderLabel.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8)
+            placeholderLabel.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+            
+            // Empty State View
+            emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -50),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            
+            // Empty State Image
+            emptyStateImageView.topAnchor.constraint(equalTo: emptyStateView.topAnchor),
+            emptyStateImageView.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
+            emptyStateImageView.widthAnchor.constraint(equalToConstant: 60),
+            emptyStateImageView.heightAnchor.constraint(equalToConstant: 60),
+            
+            // Empty State Label
+            emptyStateLabel.topAnchor.constraint(equalTo: emptyStateImageView.bottomAnchor, constant: 16),
+            emptyStateLabel.leadingAnchor.constraint(equalTo: emptyStateView.leadingAnchor),
+            emptyStateLabel.trailingAnchor.constraint(equalTo: emptyStateView.trailingAnchor),
+            emptyStateLabel.bottomAnchor.constraint(equalTo: emptyStateView.bottomAnchor)
         ])
     }
     
@@ -142,7 +222,14 @@ class ChatViewController: UIViewController {
     private func loadMessages() {
         messages = CoreDataManager.shared.getChatMessages(chatId: chatId)
         tableView.reloadData()
+        updateEmptyState()
         scrollToBottom()
+    }
+    
+    private func updateEmptyState() {
+        let isEmpty = messages.isEmpty
+        emptyStateView.isHidden = !isEmpty
+        tableView.isHidden = isEmpty
     }
     
     private func addMessage(_ message: ChatMessage) {
@@ -154,6 +241,7 @@ class ChatViewController: UIViewController {
             let wasEmpty = self.messages.count == 1
             
             if wasEmpty {
+                self.updateEmptyState()
                 self.tableView.reloadData()
             } else {
                 self.tableView.performBatchUpdates({
@@ -199,6 +287,22 @@ class ChatViewController: UIViewController {
         tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
     }
     
+    private func createNewChat() {
+        // Генеруємо новий ID для чату
+        chatId = UUID().uuidString
+        
+        // Очищуємо поточні повідомлення
+        messages.removeAll()
+        tableView.reloadData()
+        updateEmptyState()
+        
+        // Очищуємо поле вводу
+        textView.text = ""
+        textViewDidChange(textView)
+        resetTextViewHeight()
+        resetTextViewHeight()
+    }
+    
     // MARK: - Actions
     @objc private func sendButtonTapped() {
         guard let text = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -227,6 +331,44 @@ class ChatViewController: UIViewController {
         impactFeedback.impactOccurred()
     }
     
+    @objc private func newChatButtonTapped() {
+        // Показуємо алерт підтвердження, якщо є повідомлення
+        if !messages.isEmpty {
+            let alert = UIAlertController(
+                title: NSLocalizedString("New Chat", comment: ""),
+                message: NSLocalizedString("Start a new conversation? Current chat will be saved.", comment: ""),
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+            alert.addAction(UIAlertAction(title: NSLocalizedString("New Chat", comment: ""), style: .default) { _ in
+                self.createNewChat()
+            })
+            
+            present(alert, animated: true)
+        } else {
+            createNewChat()
+        }
+        
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+    }
+    
+    @objc private func newChatButtonTouchDown() {
+        guard let button = navigationItem.rightBarButtonItem?.customView else { return }
+        UIView.animate(withDuration: 0.1) {
+            button.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+        }
+    }
+    
+    @objc private func newChatButtonTouchUp() {
+        guard let button = navigationItem.rightBarButtonItem?.customView else { return }
+        UIView.animate(withDuration: 0.1) {
+            button.transform = .identity
+        }
+    }
+    
     private func showTypingIndicator() {
         isTyping = true
         // Тут можна додати індикатор "друкування"
@@ -235,6 +377,35 @@ class ChatViewController: UIViewController {
     private func hideTypingIndicator() {
         isTyping = false
         // Прибираємо індикатор "друкування"
+    }
+    
+    // MARK: - Public Methods
+    func loadChatWithId(_ id: String) {
+        chatId = id
+        loadMessages()
+        
+        // Скидаємо розмір поля вводу
+        resetTextViewHeight()
+        
+        // Додаємо кнопку повернення назад
+        let backButton = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(backToHistoryTapped)
+        )
+        backButton.tintColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
+        navigationItem.leftBarButtonItem = backButton
+    }
+    
+    @objc private func backToHistoryTapped() {
+        // Повертаємося до історії
+        if let tabBarController = tabBarController as? TabBarController {
+            tabBarController.selectedIndex = 2 // Індекс History табу
+        }
+        
+        // Прибираємо кнопку повернення
+        navigationItem.leftBarButtonItem = nil
     }
     
     // MARK: - Keyboard Handling
@@ -284,6 +455,18 @@ class ChatViewController: UIViewController {
             textView.layer.borderColor = UIColor.systemGray4.cgColor
             textView.backgroundColor = UIColor.systemBackground
             
+            // Оновлюємо кольор кнопки нового чату
+            if let button = navigationItem.rightBarButtonItem?.customView as? UIButton {
+                var config = button.configuration
+                config?.baseForegroundColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
+                button.configuration = config
+            }
+            
+            // Оновлюємо кольор кнопки назад
+            if let backButton = navigationItem.leftBarButtonItem {
+                backButton.tintColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
+            }
+            
             DispatchQueue.main.async {
                 self.view.setNeedsLayout()
                 self.view.layoutIfNeeded()
@@ -320,6 +503,9 @@ extension ChatViewController: UITextViewDelegate {
         let hasText = !textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         sendButton.isEnabled = hasText
         sendButton.alpha = hasText ? 1.0 : 0.5
+        
+        // Автоматичне зміна розміру text view
+        updateTextViewHeight()
     }
     
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -328,5 +514,43 @@ extension ChatViewController: UITextViewDelegate {
             return false
         }
         return true
+    }
+    
+    private func updateTextViewHeight() {
+        // Обчислюємо потрібну висоту для тексту
+        let fixedWidth = textView.frame.width
+        let newSize = textView.sizeThatFits(CGSize(width: fixedWidth, height: CGFloat.greatestFiniteMagnitude))
+        
+        // Обмежуємо висоту між мінімумом та максимумом
+        let newHeight = max(minTextViewHeight, min(maxTextViewHeight, newSize.height))
+        
+        // Оновлюємо constraint тільки якщо висота змінилася
+        if inputContainerHeightConstraint.constant != newHeight {
+            inputContainerHeightConstraint.constant = newHeight
+            
+            // Увімкнемо прокрутку, якщо досягли максимальної висоти
+            textView.isScrollEnabled = newHeight >= maxTextViewHeight
+            
+            // Анімуємо зміну
+            UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
+                self.view.layoutIfNeeded()
+            }
+            
+            // Прокручуємо до низу таблиці при розширенні
+            if !messages.isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.scrollToBottomSafely()
+                }
+            }
+        }
+    }
+    
+    private func resetTextViewHeight() {
+        inputContainerHeightConstraint.constant = minTextViewHeight
+        textView.isScrollEnabled = false
+        
+        UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
+            self.view.layoutIfNeeded()
+        }
     }
 }
