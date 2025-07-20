@@ -1,7 +1,19 @@
-/* 
+/*
   Localizable.strings
   Test_Brativnyk
 
-  Created by Denys Brativnyk on 20.07.2025.
+  Created by Denys Brativnyk on 18.07.2025.
   
 */
+
+// Tab Bar Titles
+"Chat" = "Chat";
+"IP Info" = "IP Info";
+"History" = "History";
+"Settings" = "Settings";
+
+// Screen Titles
+"Chat Screen" = "Chat Screen";
+"IP Info Screen" = "IP Info Screen";
+"History Screen" = "History Screen";
+"Settings Screen" = "Settings Screen";
