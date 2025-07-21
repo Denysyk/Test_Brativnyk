@@ -56,6 +56,8 @@
 "invalid_url_error" = "Ungültige URL";
 "no_data_error" = "Keine Daten empfangen";
 "decoding_error" = "Fehler beim Parsen der Daten";
+"invalid_response_error" = "Ungültige Server-Antwort";
+"timeout_error" = "Zeitüberschreitung der Anfrage. Bitte versuchen Sie es erneut.";
 
 // Common
 "loading" = "Lädt...";
@@ -79,7 +81,7 @@
 "Version" = "Version";
 "rate_app_message" = "Wie würden Sie unsere App bewerten? Ihr Feedback hilft uns, uns zu verbessern!";
 "thank_you_good_rating" = "Vielen Dank für Ihre positive Bewertung! Möchten Sie uns im App Store bewerten?";
-"Submit" = "Submit";
+"Submit" = "Senden";
 "thank_you_feedback" = "Vielen Dank für Ihr Feedback! Wir werden hart daran arbeiten, Ihre Erfahrung zu verbessern.";
 "Thank You!" = "Vielen Dank!";
 "Rate on App Store" = "Im App Store bewerten";
