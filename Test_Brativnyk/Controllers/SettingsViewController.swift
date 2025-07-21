@@ -89,7 +89,7 @@ class SettingsViewController: UIViewController {
                     self?.contactUs()
                 },
                 accessoryType: .disclosureIndicator,
-                textColor: UIColor.label  // Змінено з systemBlue на label
+                textColor: UIColor.label
             )
         ]
         
@@ -102,25 +102,29 @@ class SettingsViewController: UIViewController {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Show simple rating alert with emojis
-        showSimpleRatingAlert()
+        // Просто зірочки без зайвого
+        showSimpleStarRating()
     }
     
-    private func showSimpleRatingAlert() {
+    private func showSimpleStarRating() {
         let alert = UIAlertController(
             title: NSLocalizedString("Rate App", comment: ""),
             message: NSLocalizedString("rate_app_message", comment: ""),
             preferredStyle: .alert
         )
         
-        // Add rating options with stars
+        // 5 синіх зірочок star.fill
         for i in 1...5 {
-            let stars = String(repeating: "⭐", count: i)
-            let title = "\(stars) (\(i)/5)"
+            let stars = String(repeating: "★", count: i)
             
-            alert.addAction(UIAlertAction(title: title, style: .default) { _ in
-                self.showRatingThankYou(stars: i)
-            })
+            // Створюємо action з синіми зірочками
+            let action = UIAlertAction(title: stars, style: .default) { _ in
+                self.showSimpleThankYou()
+            }
+            
+            // Встановлюємо синій колір для зірочок
+            action.setValue(UIColor.systemBlue, forKey: "titleTextColor")
+            alert.addAction(action)
         }
         
         alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
@@ -128,35 +132,15 @@ class SettingsViewController: UIViewController {
         present(alert, animated: true)
     }
     
-    private func showRatingThankYou(stars: Int) {
-        let message = stars >= 4 ?
-            NSLocalizedString("thank_you_good_rating", comment: "") :
-            NSLocalizedString("thank_you_feedback", comment: "")
-        
+    private func showSimpleThankYou() {
         let alert = UIAlertController(
             title: NSLocalizedString("Thank You!", comment: ""),
-            message: message,
+            message: NSLocalizedString("thank_you_feedback", comment: ""),
             preferredStyle: .alert
         )
         
-        if stars >= 4 {
-            alert.addAction(UIAlertAction(title: NSLocalizedString("Rate on App Store", comment: ""), style: .default) { _ in
-                self.openAppStore()
-            })
-        }
-        
         alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
-        
         present(alert, animated: true)
-    }
-    
-    private func openAppStore() {
-        // В реальному додатку тут буде твій App Store ID
-        let appStoreURL = "https://apps.apple.com/app/id123456789" // замініти на реальний
-        
-        if let url = URL(string: appStoreURL) {
-            UIApplication.shared.open(url)
-        }
     }
     
     private func shareApp() {
@@ -164,21 +148,27 @@ class SettingsViewController: UIViewController {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        let shareText = NSLocalizedString("share_app_text", comment: "")
-        let appURL = "https://apps.apple.com/app/id123456789" // замініти на реальний
+        // Тільки чисте посилання на GitHub репозиторій
+        let githubURL = "https://github.com/Denysyk/Test_Brativnyk"
         
-        let activityViewController = UIActivityViewController(
-            activityItems: [shareText, appURL],
-            applicationActivities: nil
-        )
-        
-        // Для iPad
-        if let popover = activityViewController.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+        // Створюємо activity controller на background thread, щоб уникнути лагу
+        DispatchQueue.global(qos: .userInitiated).async {
+            let activityViewController = UIActivityViewController(
+                activityItems: [githubURL], // Тільки URL без тексту
+                applicationActivities: nil
+            )
+            
+            // Повертаємося на main thread для показу
+            DispatchQueue.main.async {
+                // Для iPad
+                if let popover = activityViewController.popoverPresentationController {
+                    popover.sourceView = self.view
+                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                }
+                
+                self.present(activityViewController, animated: true)
+            }
         }
-        
-        present(activityViewController, animated: true)
     }
     
     private func contactUs() {
@@ -186,13 +176,11 @@ class SettingsViewController: UIViewController {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Твоє реальне посилання на Notion з завданням
         let contactURL = "https://healthy-metal-aa6.notion.site/iOS-Developer-12831b2ac19680068ac3fcd91252b819?pvs=74"
         
         if let url = URL(string: contactURL) {
             UIApplication.shared.open(url) { success in
                 if !success {
-                    // Якщо не вдалося відкрити, показуємо алерт
                     DispatchQueue.main.async {
                         self.showContactFailureAlert()
                     }
@@ -210,11 +198,9 @@ class SettingsViewController: UIViewController {
             preferredStyle: .alert
         )
         
-        // Копіювати посилання в буфер
         alert.addAction(UIAlertAction(title: NSLocalizedString("Copy Link", comment: ""), style: .default) { _ in
             UIPasteboard.general.string = "https://healthy-metal-aa6.notion.site/iOS-Developer-12831b2ac19680068ac3fcd91252b819?pvs=74"
             
-            // Показуємо короткий алерт про копіювання
             let copiedAlert = UIAlertController(title: NSLocalizedString("Copied!", comment: ""), message: nil, preferredStyle: .alert)
             self.present(copiedAlert, animated: true)
             
@@ -301,17 +287,14 @@ class SettingsTableViewCell: UITableViewCell {
     private func setupUI() {
         backgroundColor = UIColor.secondarySystemGroupedBackground
         
-        // Icon
         iconImageView.contentMode = .scaleAspectFit
-        iconImageView.tintColor = UIColor.systemBlue
+        iconImageView.tintColor = UIColor.systemGray
         contentView.addSubview(iconImageView)
         
-        // Title
         titleLabel.font = UIFont.systemFont(ofSize: 17, weight: .regular)
         titleLabel.textColor = UIColor.label
         contentView.addSubview(titleLabel)
         
-        // Constraints
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         
@@ -332,8 +315,6 @@ class SettingsTableViewCell: UITableViewCell {
         titleLabel.text = item.title
         titleLabel.textColor = item.textColor
         accessoryType = item.accessoryType
-        
-        // All icons are gray now
         iconImageView.tintColor = UIColor.systemGray
     }
     

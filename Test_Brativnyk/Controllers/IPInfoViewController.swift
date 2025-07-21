@@ -288,7 +288,7 @@ class IPInfoViewController: UIViewController {
     
     private func setupInfoLabelsConstraints(headerLabels: [UILabel], valueLabels: [UILabel]) {
         let spacing: CGFloat = 16
-        let verticalSpacing: CGFloat = 8
+        let _: CGFloat = 8
         
         for (index, (headerLabel, valueLabel)) in zip(headerLabels, valueLabels).enumerated() {
             let topAnchor = index == 0 ?

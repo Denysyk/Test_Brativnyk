@@ -110,7 +110,7 @@ class CoreDataManager {
         messageEntity.timestamp = message.timestamp
         messageEntity.chatSession = chatSession
         
-        // Оновлюємо chatSession
+        // ВАЖЛИВО: Оновлюємо дату оновлення чату при додаванні нового повідомлення
         chatSession.updatedAt = Date()
         
         // Якщо це перше повідомлення, встановлюємо його як title
@@ -135,7 +135,6 @@ class CoreDataManager {
         do {
             let messageEntities = try context.fetch(request)
             return messageEntities.compactMap { entity in
-                // Перевіряємо валідність даних перед створенням ChatMessage
                 guard let id = entity.id, !id.isEmpty,
                       let text = entity.text, !text.isEmpty,
                       let timestamp = entity.timestamp,
@@ -158,8 +157,28 @@ class CoreDataManager {
         }
     }
     
+    // MARK: - Update Chat Session When Opened
+    
+    /// Оновлює дату останнього доступу до чату (коли користувач його відкриває)
+    func updateChatSessionAccess(chatId: String) {
+        guard let chatSession = getChatSession(id: chatId) else { return }
+        
+        // Оновлюємо тільки дату останнього оновлення
+        chatSession.updatedAt = Date()
+        saveContext()
+    }
+    
     func deleteMessage(_ message: Message) {
+        // Отримуємо чат сесію перед видаленням повідомлення
+        let chatSession = message.chatSession
+        
         context.delete(message)
+        
+        // Якщо це була сесія, оновлюємо її дату
+        if let session = chatSession {
+            session.updatedAt = Date()
+        }
+        
         saveContext()
     }
     

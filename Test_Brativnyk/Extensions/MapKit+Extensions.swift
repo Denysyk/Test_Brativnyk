@@ -91,7 +91,7 @@ class IPLocationAnnotationView: MKMarkerAnnotationView {
     
     override var annotation: MKAnnotation? {
         willSet {
-            guard let annotation = newValue as? MKPointAnnotation else { return }
+            guard newValue is MKPointAnnotation else { return }
             
             canShowCallout = true
             calloutOffset = CGPoint(x: -5, y: 5)

@@ -234,6 +234,8 @@ class ChatViewController: UIViewController {
     
     private func addMessage(_ message: ChatMessage) {
         messages.append(message)
+        
+        // Зберігаємо повідомлення - це автоматично оновить updatedAt чату
         CoreDataManager.shared.saveMessage(message, chatId: chatId)
         
         DispatchQueue.main.async {
@@ -300,7 +302,9 @@ class ChatViewController: UIViewController {
         textView.text = ""
         textViewDidChange(textView)
         resetTextViewHeight()
-        resetTextViewHeight()
+        
+        // Прибираємо кнопку повернення, якщо вона є
+        navigationItem.leftBarButtonItem = nil
     }
     
     // MARK: - Actions
@@ -384,6 +388,9 @@ class ChatViewController: UIViewController {
         chatId = id
         loadMessages()
         
+        // ВАЖЛИВО: Оновлюємо дату останнього доступу до чату
+        CoreDataManager.shared.updateChatSessionAccess(chatId: id)
+        
         // Скидаємо розмір поля вводу
         resetTextViewHeight()
         
@@ -396,6 +403,11 @@ class ChatViewController: UIViewController {
         )
         backButton.tintColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
         navigationItem.leftBarButtonItem = backButton
+        
+        // Очищуємо поле вводу
+        textView.text = ""
+        textViewDidChange(textView)
+        resetTextViewHeight()
     }
     
     @objc private func backToHistoryTapped() {
@@ -406,6 +418,10 @@ class ChatViewController: UIViewController {
         
         // Прибираємо кнопку повернення
         navigationItem.leftBarButtonItem = nil
+        
+        // Очищуємо поточний chatId, щоб повернутися до головного чату
+        chatId = "main_chat"
+        loadMessages()
     }
     
     // MARK: - Keyboard Handling
