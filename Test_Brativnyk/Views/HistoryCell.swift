@@ -133,7 +133,7 @@ class HistoryCell: UITableViewCell {
             // Time Label
             timeLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             timeLabel.trailingAnchor.constraint(equalTo: chevronImageView.leadingAnchor, constant: -8),
-            timeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 50),
+            timeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
             
             // Message Count Badge
             messageCountLabel.centerYAnchor.constraint(equalTo: subtitleLabel.centerYAnchor),
@@ -163,9 +163,9 @@ class HistoryCell: UITableViewCell {
             subtitleLabel.text = NSLocalizedString("No messages", comment: "")
         }
         
-        // Time - показуємо дату створення чату у форматі дати
-        if let createdAt = chatSession.createdAt {
-            timeLabel.text = formatDateOnly(createdAt)
+        // Time - показуємо дату оновлення чату в форматі дд.мм.рррр
+        if let updatedAt = chatSession.updatedAt {
+            timeLabel.text = formatDateExact(updatedAt)
         } else {
             timeLabel.text = ""
         }
@@ -185,50 +185,10 @@ class HistoryCell: UITableViewCell {
     }
     
     // MARK: - Helper Methods
-    private func formatDate(_ date: Date) -> String {
-        let calendar = Calendar.current
-        let now = Date()
-        
-        if calendar.isDate(date, inSameDayAs: now) {
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            return formatter.string(from: date)
-        } else if calendar.isDate(date, inSameDayAs: calendar.date(byAdding: .day, value: -1, to: now) ?? now) {
-            return NSLocalizedString("Yesterday", comment: "")
-        } else if calendar.dateInterval(of: .weekOfYear, for: now)?.contains(date) == true {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "EEEE"
-            return formatter.string(from: date)
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .short
-            return formatter.string(from: date)
-        }
-    }
-    
-    private func formatDateOnly(_ date: Date) -> String {
-        let calendar = Calendar.current
-        let now = Date()
-        
-        if calendar.isDate(date, inSameDayAs: now) {
-            return NSLocalizedString("Today", comment: "")
-        } else if calendar.isDate(date, inSameDayAs: calendar.date(byAdding: .day, value: -1, to: now) ?? now) {
-            return NSLocalizedString("Yesterday", comment: "")
-        } else if calendar.dateInterval(of: .weekOfYear, for: now)?.contains(date) == true {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "EEEE"
-            return formatter.string(from: date)
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd.MM.yyyy"
-            return formatter.string(from: date)
-        }
-    }
-    
-    private func isRecent(_ date: Date?) -> Bool {
-        guard let date = date else { return false }
-        let daysSinceUpdate = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
-        return daysSinceUpdate <= 1
+    private func formatDateExact(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        return formatter.string(from: date)
     }
     
     // MARK: - Animation

@@ -388,8 +388,7 @@ class ChatViewController: UIViewController {
         chatId = id
         loadMessages()
         
-        // ВАЖЛИВО: Оновлюємо дату останнього доступу до чату
-        CoreDataManager.shared.updateChatSessionAccess(chatId: id)
+        // НЕ оновлюємо дату при відкритті - дата оновлюється тільки при додаванні повідомлень
         
         // Скидаємо розмір поля вводу
         resetTextViewHeight()

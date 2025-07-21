@@ -26,11 +26,16 @@ class HistoryViewController: UIViewController {
         setupUI()
         setupConstraints()
         loadChatSessions()
+        setupNotifications()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        loadChatSessions() // Оновлюємо дані при поверненні на екран
+        loadChatSessions()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Setup Methods
@@ -111,7 +116,7 @@ class HistoryViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80), // Відступ для таб-бару
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80),
             
             // Empty State View
             emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -136,6 +141,22 @@ class HistoryViewController: UIViewController {
             emptyStateSubtitleLabel.trailingAnchor.constraint(equalTo: emptyStateView.trailingAnchor),
             emptyStateSubtitleLabel.bottomAnchor.constraint(equalTo: emptyStateView.bottomAnchor)
         ])
+    }
+    
+    // MARK: - Notifications Setup
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleChatSessionUpdated),
+            name: NSNotification.Name("ChatSessionUpdated"),
+            object: nil
+        )
+    }
+    
+    @objc private func handleChatSessionUpdated() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.loadChatSessions()
+        }
     }
     
     // MARK: - Data Methods

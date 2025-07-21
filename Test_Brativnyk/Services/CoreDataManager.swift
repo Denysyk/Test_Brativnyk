@@ -97,7 +97,6 @@ class CoreDataManager {
               !message.id.uuidString.isEmpty,
               message.timestamp.timeIntervalSince1970.isFinite,
               !chatId.isEmpty else {
-            print("Invalid message data, skipping save")
             return
         }
         
@@ -110,8 +109,9 @@ class CoreDataManager {
         messageEntity.timestamp = message.timestamp
         messageEntity.chatSession = chatSession
         
-        // ВАЖЛИВО: Оновлюємо дату оновлення чату при додаванні нового повідомлення
-        chatSession.updatedAt = Date()
+        // Оновлюємо дату оновлення чату при додаванні нового повідомлення
+        let currentDate = Date()
+        chatSession.updatedAt = currentDate
         
         // Якщо це перше повідомлення, встановлюємо його як title
         if chatSession.messages?.count == 0 || chatSession.title == NSLocalizedString("New Chat", comment: "") {
@@ -120,6 +120,15 @@ class CoreDataManager {
         }
         
         saveContext()
+        
+        // Відправляємо нотифікацію для оновлення історії
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ChatSessionUpdated"),
+                object: nil,
+                userInfo: ["chatId": chatId]
+            )
+        }
     }
     
     func getChatMessages(chatId: String) -> [ChatMessage] {
@@ -140,7 +149,6 @@ class CoreDataManager {
                       let timestamp = entity.timestamp,
                       !timestamp.timeIntervalSince1970.isNaN,
                       let uuid = UUID(uuidString: id) else {
-                    print("⚠️ Invalid message entity, skipping")
                     return nil
                 }
                 
@@ -152,21 +160,11 @@ class CoreDataManager {
                 )
             }
         } catch {
-            print("Error fetching messages: \(error)")
             return []
         }
     }
     
     // MARK: - Update Chat Session When Opened
-    
-    /// Оновлює дату останнього доступу до чату (коли користувач його відкриває)
-    func updateChatSessionAccess(chatId: String) {
-        guard let chatSession = getChatSession(id: chatId) else { return }
-        
-        // Оновлюємо тільки дату останнього оновлення
-        chatSession.updatedAt = Date()
-        saveContext()
-    }
     
     func deleteMessage(_ message: Message) {
         // Отримуємо чат сесію перед видаленням повідомлення
@@ -174,7 +172,7 @@ class CoreDataManager {
         
         context.delete(message)
         
-        // Якщо це була сесія, оновлюємо її дату
+        // Якщо це була сесія, оновлюємо її дату до поточної
         if let session = chatSession {
             session.updatedAt = Date()
         }
