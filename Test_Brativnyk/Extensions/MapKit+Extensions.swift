@@ -14,6 +14,8 @@ extension MKMapView {
     
     /// Sets the map region to show a specific coordinate with a given radius
     func setRegion(center: CLLocationCoordinate2D, radiusInMeters: CLLocationDistance, animated: Bool = true) {
+        guard center.isValid else { return }
+        
         let region = MKCoordinateRegion(
             center: center,
             latitudinalMeters: radiusInMeters,
@@ -27,7 +29,9 @@ extension MKMapView {
         coordinate: CLLocationCoordinate2D,
         title: String?,
         subtitle: String?
-    ) -> MKPointAnnotation {
+    ) -> MKPointAnnotation? {
+        guard coordinate.isValid else { return nil }
+        
         let annotation = MKPointAnnotation()
         annotation.coordinate = coordinate
         annotation.title = title
@@ -49,16 +53,19 @@ extension MKMapView {
         showsUserLocation = false
         isZoomEnabled = true
         isScrollEnabled = true
-        isRotateEnabled = true
+        isRotateEnabled = false
         isPitchEnabled = false
         
         // Add subtle style
-        layer.cornerRadius = ThemeManager.CornerRadius.large
+        layer.cornerRadius = 16
         clipsToBounds = true
         
         // Add border for better visibility
         layer.borderWidth = 0.5
         layer.borderColor = UIColor.separator.cgColor
+        
+        // Prevent automatic region changes
+        isUserInteractionEnabled = true
     }
 }
 
@@ -67,7 +74,10 @@ extension CLLocationCoordinate2D {
     
     /// Checks if coordinate is valid
     var isValid: Bool {
-        return CLLocationCoordinate2DIsValid(self)
+        return CLLocationCoordinate2DIsValid(self) &&
+               latitude != 0.0 || longitude != 0.0 &&
+               abs(latitude) <= 90.0 &&
+               abs(longitude) <= 180.0
     }
     
     /// Returns formatted string representation
@@ -80,6 +90,8 @@ extension CLLocationCoordinate2D {
     
     /// Distance between two coordinates in meters
     func distance(to coordinate: CLLocationCoordinate2D) -> CLLocationDistance {
+        guard isValid && coordinate.isValid else { return 0 }
+        
         let from = CLLocation(latitude: latitude, longitude: longitude)
         let to = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         return from.distance(from: to)
@@ -91,19 +103,21 @@ class IPLocationAnnotationView: MKMarkerAnnotationView {
     
     override var annotation: MKAnnotation? {
         willSet {
-            guard newValue is MKPointAnnotation else { return }
+            guard let newAnnotation = newValue as? IPInfoAnnotation,
+                  newAnnotation.coordinate.isValid else { return }
             
             canShowCallout = true
             calloutOffset = CGPoint(x: -5, y: 5)
-            rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
             
             // Customize marker appearance
             markerTintColor = UIColor.systemRed
             glyphTintColor = UIColor.white
             glyphImage = UIImage(systemName: "location.fill")
             
-            // Add subtle animation
-            animatesWhenAdded = true
+            // Add animation only when needed
+            if animatesWhenAdded != true {
+                animatesWhenAdded = true
+            }
             
             // Custom display priority
             displayPriority = .required
@@ -113,6 +127,8 @@ class IPLocationAnnotationView: MKMarkerAnnotationView {
     override func prepareForReuse() {
         super.prepareForReuse()
         annotation = nil
+        canShowCallout = false
+        animatesWhenAdded = false
     }
 }
 
@@ -147,7 +163,8 @@ class IPInfoAnnotation: NSObject, IPLocationAnnotation {
 class MapViewHelper: NSObject, MKMapViewDelegate {
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        guard annotation is IPLocationAnnotation else { return nil }
+        guard let annotation = annotation as? IPLocationAnnotation,
+              annotation.coordinate.isValid else { return nil }
         
         let identifier = "IPLocationPin"
         
@@ -160,6 +177,46 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
         }
         
         return annotationView
+    }
+    
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        // Додаткова перевірка при виборі анотації
+        guard let annotation = view.annotation as? IPLocationAnnotation else { return }
+        
+        // Легка анімація при виборі
+        UIView.animate(withDuration: 0.2) {
+            view.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+        } completion: { _ in
+            UIView.animate(withDuration: 0.2) {
+                view.transform = .identity
+            }
+        }
+    }
+    
+    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+        // Очищуємо анімації при deselect
+        view.transform = .identity
+        view.layer.removeAllAnimations()
+    }
+    
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        // Обмежуємо надто далекі зуми для стабільності
+        let maxLatitudeDelta: CLLocationDegrees = 180.0
+        let maxLongitudeDelta: CLLocationDegrees = 360.0
+        
+        if mapView.region.span.latitudeDelta > maxLatitudeDelta ||
+           mapView.region.span.longitudeDelta > maxLongitudeDelta {
+            
+            let constrainedRegion = MKCoordinateRegion(
+                center: mapView.region.center,
+                span: MKCoordinateSpan(
+                    latitudeDelta: min(mapView.region.span.latitudeDelta, maxLatitudeDelta),
+                    longitudeDelta: min(mapView.region.span.longitudeDelta, maxLongitudeDelta)
+                )
+            )
+            
+            mapView.setRegion(constrainedRegion, animated: false)
+        }
     }
     
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {

@@ -2,7 +2,7 @@
 //  IPInfoViewController.swift
 //  Test_Brativnyk
 //
-//  Created by Denys Brativnyk on 18.07.2025.
+//  Created by Denys Brativnyk on 20.07.2025.
 //
 
 import UIKit
@@ -10,11 +10,10 @@ import MapKit
 import CoreLocation
 
 class IPInfoViewController: UIViewController {
-    
+
     // MARK: - UI Elements
     private let scrollView = UIScrollView()
     private let contentView = UIView()
-    private let mapView = MKMapView()
     private let infoContainerView = UIView()
     private let loadingView = UIView()
     private let loadingIndicator = UIActivityIndicatorView(style: .large)
@@ -23,7 +22,7 @@ class IPInfoViewController: UIViewController {
     private let errorImageView = UIImageView()
     private let errorLabel = UILabel()
     private let retryButton = UIButton(type: .system)
-    
+
     // Info Labels
     private let ipLabel = UILabel()
     private let locationLabel = UILabel()
@@ -33,7 +32,7 @@ class IPInfoViewController: UIViewController {
     private let ispLabel = UILabel()
     private let organizationLabel = UILabel()
     private let coordinatesLabel = UILabel()
-    
+
     // Info Headers
     private let ipHeaderLabel = UILabel()
     private let locationHeaderLabel = UILabel()
@@ -43,40 +42,54 @@ class IPInfoViewController: UIViewController {
     private let ispHeaderLabel = UILabel()
     private let organizationHeaderLabel = UILabel()
     private let coordinatesHeaderLabel = UILabel()
-    
+
     // MARK: - Properties
     private var currentIPInfo: IPInfo?
     private var mapAnnotation: IPInfoAnnotation?
-    private var mapHelper: MapViewHelper?
     
+    // Створюємо карту та її помічника як lazy-властивості.
+    // Вони будуть ініціалізовані лише один раз при першому зверненні.
+    private lazy var mapHelper: MapViewHelper = MapViewHelper()
+    
+    private lazy var mapView: MKMapView = {
+        let mapView = MKMapView()
+        mapView.setupForIPLocation()
+        mapView.delegate = self.mapHelper
+        mapView.isHidden = true // Початково прихована до завантаження даних
+        return mapView
+    }()
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
         setupNavigationBar()
-        loadIPInfo()
+        loadIPInfo() // Завантажуємо дані при першому завантаженні view
     }
     
+    deinit {
+        // Очищуємо делегат, щоб уникнути витоків пам'яті
+        mapView.delegate = nil
+    }
+
     // MARK: - Setup Methods
     private func setupUI() {
         view.backgroundColor = UIColor.systemBackground
         title = NSLocalizedString("IP Info", comment: "")
-        
+
         // Scroll View
         scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
         view.addSubview(scrollView)
-        
+
         // Content View
         scrollView.addSubview(contentView)
         
         // Map View
-        mapView.setupForIPLocation()
-        mapHelper = MapViewHelper()
-        mapView.delegate = mapHelper
+        // Додаємо карту до ієрархії одразу
         contentView.addSubview(mapView)
-        
+
         // Info Container
         infoContainerView.backgroundColor = UIColor.secondarySystemBackground
         infoContainerView.layer.cornerRadius = 16
@@ -85,15 +98,15 @@ class IPInfoViewController: UIViewController {
         infoContainerView.layer.shadowRadius = 8
         infoContainerView.layer.shadowOpacity = 0.1
         contentView.addSubview(infoContainerView)
-        
+
         setupInfoLabels()
         setupLoadingView()
         setupErrorView()
-        
+
         // Initial state
         showLoadingState()
     }
-    
+
     private func setupInfoLabels() {
         let headerLabels = [ipHeaderLabel, locationHeaderLabel, regionHeaderLabel,
                            countryHeaderLabel, timezoneHeaderLabel, ispHeaderLabel,
@@ -131,7 +144,7 @@ class IPInfoViewController: UIViewController {
             infoContainerView.addSubview(label)
         }
     }
-    
+
     private func setupLoadingView() {
         loadingView.backgroundColor = UIColor.systemBackground
         loadingView.layer.cornerRadius = 16
@@ -147,7 +160,7 @@ class IPInfoViewController: UIViewController {
         loadingLabel.textAlignment = .center
         loadingView.addSubview(loadingLabel)
     }
-    
+
     private func setupErrorView() {
         errorView.backgroundColor = UIColor.systemBackground
         errorView.layer.cornerRadius = 16
@@ -174,9 +187,8 @@ class IPInfoViewController: UIViewController {
         retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
         errorView.addSubview(retryButton)
     }
-    
+
     private func setupNavigationBar() {
-        // Reload button
         let reloadButton = UIButton(type: .system)
         
         var config = UIButton.Configuration.borderless()
@@ -190,13 +202,12 @@ class IPInfoViewController: UIViewController {
         reloadButton.configuration = config
         reloadButton.addTarget(self, action: #selector(reloadButtonTapped), for: .touchUpInside)
         
-        // Touch animations
         reloadButton.addTarget(self, action: #selector(reloadButtonTouchDown), for: .touchDown)
         reloadButton.addTarget(self, action: #selector(reloadButtonTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: reloadButton)
     }
-    
+
     private func setupConstraints() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -210,13 +221,10 @@ class IPInfoViewController: UIViewController {
         errorLabel.translatesAutoresizingMaskIntoConstraints = false
         retryButton.translatesAutoresizingMaskIntoConstraints = false
         
-        // Headers and values arrays for constraints
-        let headerLabels = [ipHeaderLabel, locationHeaderLabel, regionHeaderLabel,
-                           countryHeaderLabel, timezoneHeaderLabel, ispHeaderLabel,
-                           organizationHeaderLabel, coordinatesHeaderLabel]
-        
-        let valueLabels = [ipLabel, locationLabel, regionLabel, countryLabel,
-                          timezoneLabel, ispLabel, organizationLabel, coordinatesLabel]
+        let headerLabels = [ipHeaderLabel, locationHeaderLabel, regionHeaderLabel, countryHeaderLabel,
+                           timezoneHeaderLabel, ispHeaderLabel, organizationHeaderLabel, coordinatesHeaderLabel]
+        let valueLabels = [ipLabel, locationLabel, regionLabel, countryLabel, timezoneLabel,
+                          ispLabel, organizationLabel, coordinatesLabel]
         
         for label in headerLabels + valueLabels {
             label.translatesAutoresizingMaskIntoConstraints = false
@@ -242,14 +250,14 @@ class IPInfoViewController: UIViewController {
             mapView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             mapView.heightAnchor.constraint(equalToConstant: 250),
             
-            // Info Container
+            // Info Container View
             infoContainerView.topAnchor.constraint(equalTo: mapView.bottomAnchor, constant: 16),
             infoContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             infoContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             infoContainerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
             
             // Loading View
-            loadingView.topAnchor.constraint(equalTo: mapView.bottomAnchor, constant: 16),
+            loadingView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
             loadingView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             loadingView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             loadingView.heightAnchor.constraint(equalToConstant: 100),
@@ -262,7 +270,7 @@ class IPInfoViewController: UIViewController {
             loadingLabel.trailingAnchor.constraint(equalTo: loadingView.trailingAnchor, constant: -16),
             
             // Error View
-            errorView.topAnchor.constraint(equalTo: mapView.bottomAnchor, constant: 16),
+            errorView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
             errorView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             errorView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             errorView.heightAnchor.constraint(equalToConstant: 200),
@@ -282,13 +290,11 @@ class IPInfoViewController: UIViewController {
             retryButton.heightAnchor.constraint(equalToConstant: 44)
         ])
         
-        // Info labels constraints
         setupInfoLabelsConstraints(headerLabels: headerLabels, valueLabels: valueLabels)
     }
-    
+
     private func setupInfoLabelsConstraints(headerLabels: [UILabel], valueLabels: [UILabel]) {
         let spacing: CGFloat = 16
-        let _: CGFloat = 8
         
         for (index, (headerLabel, valueLabel)) in zip(headerLabels, valueLabels).enumerated() {
             let topAnchor = index == 0 ?
@@ -297,74 +303,72 @@ class IPInfoViewController: UIViewController {
             let topConstant: CGFloat = index == 0 ? spacing : spacing
             
             NSLayoutConstraint.activate([
-                // Header
                 headerLabel.topAnchor.constraint(equalTo: topAnchor, constant: topConstant),
                 headerLabel.leadingAnchor.constraint(equalTo: infoContainerView.leadingAnchor, constant: spacing),
                 headerLabel.trailingAnchor.constraint(equalTo: infoContainerView.trailingAnchor, constant: -spacing),
                 
-                // Value
                 valueLabel.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 4),
                 valueLabel.leadingAnchor.constraint(equalTo: infoContainerView.leadingAnchor, constant: spacing),
                 valueLabel.trailingAnchor.constraint(equalTo: infoContainerView.trailingAnchor, constant: -spacing)
             ])
             
-            // Last element should have bottom constraint
             if index == valueLabels.count - 1 {
                 valueLabel.bottomAnchor.constraint(equalTo: infoContainerView.bottomAnchor, constant: -spacing).isActive = true
             }
         }
     }
-    
+
     // MARK: - State Management
     private func showLoadingState() {
         infoContainerView.isHidden = true
         errorView.isHidden = true
         loadingView.isHidden = false
+        mapView.isHidden = true
         loadingIndicator.startAnimating()
-        
-        // Disable reload button during loading
         navigationItem.rightBarButtonItem?.isEnabled = false
     }
-    
+
     private func showContentState() {
         loadingView.isHidden = true
         errorView.isHidden = true
         infoContainerView.isHidden = false
+        mapView.isHidden = false
         loadingIndicator.stopAnimating()
-        
-        // Enable reload button
         navigationItem.rightBarButtonItem?.isEnabled = true
     }
-    
+
     private func showErrorState(message: String) {
         infoContainerView.isHidden = true
         loadingView.isHidden = true
         errorView.isHidden = false
+        mapView.isHidden = true
         loadingIndicator.stopAnimating()
         errorLabel.text = message
-        
-        // Enable reload button
         navigationItem.rightBarButtonItem?.isEnabled = true
     }
-    
+
     // MARK: - Data Loading
     private func loadIPInfo() {
         showLoadingState()
         
         NetworkService.shared.fetchIPInfo { [weak self] result in
-            switch result {
-            case .success(let ipInfo):
-                self?.currentIPInfo = ipInfo
-                self?.updateUI(with: ipInfo)
-                self?.updateMap(with: ipInfo)
-                self?.showContentState()
+            DispatchQueue.main.async {
+                guard let self = self else { return }
                 
-            case .failure(let error):
-                self?.showErrorState(message: error.localizedDescription)
+                switch result {
+                case .success(let ipInfo):
+                    self.currentIPInfo = ipInfo
+                    self.updateUI(with: ipInfo)
+                    self.updateMap(with: ipInfo)
+                    self.showContentState()
+                    
+                case .failure(let error):
+                    self.showErrorState(message: error.localizedDescription)
+                }
             }
         }
     }
-    
+
     private func updateUI(with ipInfo: IPInfo) {
         ipLabel.text = ipInfo.query
         locationLabel.text = ipInfo.formattedLocation
@@ -375,40 +379,33 @@ class IPInfoViewController: UIViewController {
         organizationLabel.text = ipInfo.org
         coordinatesLabel.text = CLLocationCoordinate2D(latitude: ipInfo.lat, longitude: ipInfo.lon).formattedString
     }
-    
+
     private func updateMap(with ipInfo: IPInfo) {
-        // Remove existing annotation
         if let existingAnnotation = mapAnnotation {
             mapView.removeAnnotation(existingAnnotation)
         }
         
-        // Create new annotation
         let annotation = IPInfoAnnotation(ipInfo: ipInfo)
         mapView.addAnnotation(annotation)
         mapAnnotation = annotation
         
-        // Center map on location with animation
         mapView.setRegion(
             center: annotation.coordinate,
-            radiusInMeters: 50000, // 50km radius
+            radiusInMeters: 50000,
             animated: true
         )
         
-        // Add some delay to ensure smooth animation
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.mapView.selectAnnotation(annotation, animated: true)
         }
     }
-    
+
     // MARK: - Actions
     @objc private func reloadButtonTapped() {
         loadIPInfo()
-        
-        // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
-        // Animate reload button
         if let button = navigationItem.rightBarButtonItem?.customView {
             UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.8) {
                 button.transform = CGAffineTransform(rotationAngle: .pi)
@@ -422,8 +419,6 @@ class IPInfoViewController: UIViewController {
     
     @objc private func retryButtonTapped() {
         loadIPInfo()
-        
-        // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
     }
@@ -447,10 +442,8 @@ class IPInfoViewController: UIViewController {
         super.traitCollectionDidChange(previousTraitCollection)
         
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            // Update shadow color
             infoContainerView.layer.shadowColor = UIColor.label.cgColor
             
-            // Update reload button color
             if let button = navigationItem.rightBarButtonItem?.customView as? UIButton {
                 var config = button.configuration
                 config?.baseForegroundColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
