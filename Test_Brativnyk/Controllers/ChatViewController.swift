@@ -21,7 +21,7 @@ class ChatViewController: UIViewController {
     
     // MARK: - Properties
     private var messages: [ChatMessage] = []
-    private var chatId = "main_chat"
+    private var chatId: String? // Змінюємо на optional
     private var inputContainerBottomConstraint: NSLayoutConstraint!
     private var inputContainerHeightConstraint: NSLayoutConstraint!
     private var isTyping = false
@@ -35,11 +35,18 @@ class ChatViewController: UIViewController {
         setupConstraints()
         setupKeyboardObservers()
         setupNavigationBar()
-        loadMessages()
+        loadInitialChatState()
     }
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // Додаткове прокручування до кінця після того, як view повністю з'явилось
+        if !messages.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.scrollToBottomWithoutAnimation()
+            }
+        }
     }
     
     // MARK: - Setup Methods
@@ -219,11 +226,51 @@ class ChatViewController: UIViewController {
     }
     
     // MARK: - Data Methods
+    private func loadInitialChatState() {
+        // Завантажуємо останній створений чат або показуємо порожній стан
+        let lastChatSession = CoreDataManager.shared.getLastChatSession()
+        
+        if let lastSession = lastChatSession, let sessionId = lastSession.id {
+            chatId = sessionId
+            loadMessages()
+        } else {
+            // Якщо немає жодного чату, показуємо порожній стан
+            chatId = nil
+            messages = []
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+                self.updateEmptyState()
+            }
+        }
+        
+        // Прибираємо кнопку повернення
+        navigationItem.leftBarButtonItem = nil
+        
+        // Очищуємо поле вводу
+        textView.text = ""
+        textViewDidChange(textView)
+        // CHANGED: Використовуємо новий метод без анімації для початкового налаштування.
+        // Це запобігає виклику layoutIfNeeded до того, як view з'явиться у вікні.
+        setInitialTextViewHeight()
+    }
+    
     private func loadMessages() {
+        guard let chatId = chatId else {
+            messages = []
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+                self.updateEmptyState()
+            }
+            return
+        }
+        
         messages = CoreDataManager.shared.getChatMessages(chatId: chatId)
-        tableView.reloadData()
-        updateEmptyState()
-        scrollToBottom()
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+            self.updateEmptyState()
+            // FIX: Видалено передчасне прокручування звідси.
+            // Прокручування тепер надійно виконується лише у viewDidAppear.
+        }
     }
     
     private func updateEmptyState() {
@@ -233,10 +280,17 @@ class ChatViewController: UIViewController {
     }
     
     private func addMessage(_ message: ChatMessage) {
+        // Якщо немає активного чату, створюємо новий
+        if chatId == nil {
+            chatId = UUID().uuidString
+        }
+        
+        guard let currentChatId = chatId else { return }
+        
         messages.append(message)
         
         // Зберігаємо повідомлення - це автоматично оновить updatedAt чату
-        CoreDataManager.shared.saveMessage(message, chatId: chatId)
+        CoreDataManager.shared.saveMessage(message, chatId: currentChatId)
         
         DispatchQueue.main.async {
             // Безпечне оновлення таблиці
@@ -257,7 +311,9 @@ class ChatViewController: UIViewController {
     }
     
     private func scrollToBottom() {
-        guard !messages.isEmpty else { return }
+        guard !messages.isEmpty,
+              view.window != nil, // Перевіряємо, чи view в ієрархії
+              tableView.superview != nil else { return }
         
         DispatchQueue.main.async {
             // Додаткові перевірки для уникнення NaN
@@ -267,21 +323,34 @@ class ChatViewController: UIViewController {
             
             let indexPath = IndexPath(row: numberOfRows - 1, section: 0)
             
-            // Перевіряємо чи існує ця комірка
-            guard self.tableView.cellForRow(at: indexPath) != nil || numberOfRows <= 1 else {
+            // Перевіряємо чи існує ця комірка або це перша комірка
+            if numberOfRows <= 1 || self.tableView.cellForRow(at: indexPath) != nil {
+                self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+            } else {
                 // Якщо комірка не існує, спробуємо через невелику затримку
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     self.scrollToBottomSafely()
                 }
-                return
             }
-            
-            self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
         }
+    }
+    
+    private func scrollToBottomWithoutAnimation() {
+        guard !messages.isEmpty,
+              view.window != nil,
+              tableView.superview != nil,
+              tableView.numberOfSections > 0,
+              tableView.numberOfRows(inSection: 0) == messages.count else { return }
+        
+        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        // Прокручуємо без анімації для швидкого відображення
+        tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
     }
     
     private func scrollToBottomSafely() {
         guard !messages.isEmpty,
+              view.window != nil, // Перевіряємо, чи view в ієрархії
+              tableView.superview != nil,
               tableView.numberOfSections > 0,
               tableView.numberOfRows(inSection: 0) == messages.count else { return }
         
@@ -290,18 +359,20 @@ class ChatViewController: UIViewController {
     }
     
     private func createNewChat() {
-        // Генеруємо новий ID для чату
-        chatId = UUID().uuidString
-        
-        // Очищуємо поточні повідомлення
+        // Очищуємо поточний стан
+        chatId = nil
         messages.removeAll()
-        tableView.reloadData()
-        updateEmptyState()
+        
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+            self.updateEmptyState()
+        }
         
         // Очищуємо поле вводу
         textView.text = ""
         textViewDidChange(textView)
-        resetTextViewHeight()
+        // CHANGED: Використовуємо метод без анімації.
+        setInitialTextViewHeight()
         
         // Прибираємо кнопку повернення, якщо вона є
         navigationItem.leftBarButtonItem = nil
@@ -388,11 +459,6 @@ class ChatViewController: UIViewController {
         chatId = id
         loadMessages()
         
-        // НЕ оновлюємо дату при відкритті - дата оновлюється тільки при додаванні повідомлень
-        
-        // Скидаємо розмір поля вводу
-        resetTextViewHeight()
-        
         // Додаємо кнопку повернення назад
         let backButton = UIBarButtonItem(
             image: UIImage(systemName: "chevron.left"),
@@ -403,9 +469,11 @@ class ChatViewController: UIViewController {
         backButton.tintColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
         navigationItem.leftBarButtonItem = backButton
         
-        // Очищуємо поле вводу
+        // Очищуємо поле вводу та скидаємо його висоту
         textView.text = ""
         textViewDidChange(textView)
+        // FIX: Використовуємо анімований метод reset, бо view вже видиме.
+        // Виклик був подвоєний, тепер він один.
         resetTextViewHeight()
     }
     
@@ -415,12 +483,11 @@ class ChatViewController: UIViewController {
             tabBarController.selectedIndex = 2 // Індекс History табу
         }
         
-        // Прибираємо кнопку повернення
+        // Прибираємо кнопку повернення та повертаємся до порожнього стану
         navigationItem.leftBarButtonItem = nil
         
-        // Очищуємо поточний chatId, щоб повернутися до головного чату
-        chatId = "main_chat"
-        loadMessages()
+        // Повертаємося до початкового стану (завантажуємо останній або порожній чат)
+        loadInitialChatState()
     }
     
     // MARK: - Keyboard Handling
@@ -552,7 +619,7 @@ extension ChatViewController: UITextViewDelegate {
             }
             
             // Прокручуємо до низу таблиці при розширенні
-            if !messages.isEmpty {
+            if !messages.isEmpty && self.view.window != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     self.scrollToBottomSafely()
                 }
@@ -560,6 +627,14 @@ extension ChatViewController: UITextViewDelegate {
         }
     }
     
+    // FIX: Створено новий метод, який встановлює висоту без анімації.
+    // Він використовується під час viewDidLoad, щоб уникнути помилки.
+    private func setInitialTextViewHeight() {
+        inputContainerHeightConstraint.constant = minTextViewHeight
+        textView.isScrollEnabled = false
+    }
+    
+    // Цей метод з анімацією тепер безпечно використовувати, коли view вже видиме.
     private func resetTextViewHeight() {
         inputContainerHeightConstraint.constant = minTextViewHeight
         textView.isScrollEnabled = false

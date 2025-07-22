@@ -85,6 +85,20 @@ class CoreDataManager {
         }
     }
     
+    func getLastChatSession() -> ChatSession? {
+        let request: NSFetchRequest<ChatSession> = ChatSession.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
+        request.fetchLimit = 1
+        
+        do {
+            let sessions = try context.fetch(request)
+            return sessions.first
+        } catch {
+            print("Error fetching last chat session: \(error)")
+            return nil
+        }
+    }
+    
     func deleteChatSession(_ session: ChatSession) {
         context.delete(session)
         saveContext()
