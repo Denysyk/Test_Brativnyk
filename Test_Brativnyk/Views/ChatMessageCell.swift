@@ -16,6 +16,7 @@ class ChatMessageCell: UITableViewCell {
     private let avatarImageView = UIImageView()
     
     private var currentMessageType: MessageType?
+    private var constraintsSetup = false
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -52,10 +53,12 @@ class ChatMessageCell: UITableViewCell {
         timeLabel.textColor = UIColor.systemGray
         contentView.addSubview(timeLabel)
         
-        setupConstraints()
+        setupBaseConstraints()
     }
     
-    private func setupConstraints() {
+    private func setupBaseConstraints() {
+        guard !constraintsSetup else { return }
+        
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         messageContainerView.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -88,6 +91,8 @@ class ChatMessageCell: UITableViewCell {
             timeLabel.topAnchor.constraint(equalTo: messageContainerView.bottomAnchor, constant: 4),
             timeLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
+        
+        constraintsSetup = true
     }
     
     func configure(with message: ChatMessage) {
@@ -109,7 +114,7 @@ class ChatMessageCell: UITableViewCell {
     }
     
     private func updateLayoutForMessageType(_ type: MessageType) {
-        // Очищуємо всі існуючі constraints для позиціювання
+        // Очищуємо тільки змінні constraints, не усі
         avatarImageView.removeFromSuperview()
         messageContainerView.removeFromSuperview()
         timeLabel.removeFromSuperview()
@@ -119,8 +124,14 @@ class ChatMessageCell: UITableViewCell {
         contentView.addSubview(messageContainerView)
         contentView.addSubview(timeLabel)
         
+        // Скидаємо translatesAutoresizingMaskIntoConstraints
+        avatarImageView.translatesAutoresizingMaskIntoConstraints = false
+        messageContainerView.translatesAutoresizingMaskIntoConstraints = false
+        timeLabel.translatesAutoresizingMaskIntoConstraints = false
+        
         // Встановлюємо базові constraints
-        setupConstraints()
+        constraintsSetup = false
+        setupBaseConstraints()
         
         switch type {
         case .user:
@@ -184,6 +195,7 @@ class ChatMessageCell: UITableViewCell {
         currentMessageType = nil
         messageLabel.text = nil
         timeLabel.text = nil
+        constraintsSetup = false
     }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

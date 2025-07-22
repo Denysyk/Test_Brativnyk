@@ -14,13 +14,38 @@ extension MKMapView {
     
     /// Sets the map region to show a specific coordinate with a given radius
     func setRegion(center: CLLocationCoordinate2D, radiusInMeters: CLLocationDistance, animated: Bool = true) {
-        guard center.isValid else { return }
+        guard center.isValid,
+              radiusInMeters.isFinite,
+              !radiusInMeters.isNaN,
+              !radiusInMeters.isInfinite,
+              radiusInMeters > 0 else {
+            print("Invalid parameters for setRegion: center=\(center), radius=\(radiusInMeters)")
+            return
+        }
         
         let region = MKCoordinateRegion(
             center: center,
             latitudinalMeters: radiusInMeters,
             longitudinalMeters: radiusInMeters
         )
+        
+        // Додаткова перевірка валідності region
+        guard region.center.latitude.isFinite &&
+              region.center.longitude.isFinite &&
+              region.span.latitudeDelta.isFinite &&
+              region.span.longitudeDelta.isFinite &&
+              !region.center.latitude.isNaN &&
+              !region.center.longitude.isNaN &&
+              !region.span.latitudeDelta.isNaN &&
+              !region.span.longitudeDelta.isNaN &&
+              !region.center.latitude.isInfinite &&
+              !region.center.longitude.isInfinite &&
+              !region.span.latitudeDelta.isInfinite &&
+              !region.span.longitudeDelta.isInfinite else {
+            print("Invalid region calculated, skipping setRegion")
+            return
+        }
+        
         setRegion(region, animated: animated)
     }
     
@@ -72,16 +97,26 @@ extension MKMapView {
 // MARK: - CLLocationCoordinate2D Extensions
 extension CLLocationCoordinate2D {
     
-    /// Checks if coordinate is valid
+    /// Checks if coordinate is valid with additional NaN checks
     var isValid: Bool {
         return CLLocationCoordinate2DIsValid(self) &&
-               latitude != 0.0 || longitude != 0.0 &&
+               (latitude != 0.0 || longitude != 0.0) &&
                abs(latitude) <= 90.0 &&
-               abs(longitude) <= 180.0
+               abs(longitude) <= 180.0 &&
+               latitude.isFinite &&
+               longitude.isFinite &&
+               !latitude.isNaN &&
+               !longitude.isNaN &&
+               !latitude.isInfinite &&
+               !longitude.isInfinite
     }
     
     /// Returns formatted string representation
     var formattedString: String {
+        guard isValid else {
+            return "Invalid coordinates"
+        }
+        
         return LocalizationManager.shared.formatCoordinates(
             latitude: latitude,
             longitude: longitude
@@ -94,7 +129,14 @@ extension CLLocationCoordinate2D {
         
         let from = CLLocation(latitude: latitude, longitude: longitude)
         let to = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        return from.distance(from: to)
+        let distance = from.distance(from: to)
+        
+        // Перевіряємо валідність результату
+        guard distance.isFinite && !distance.isNaN && !distance.isInfinite else {
+            return 0
+        }
+        
+        return distance
     }
 }
 
@@ -142,15 +184,24 @@ class IPInfoAnnotation: NSObject, IPLocationAnnotation {
     let ipInfo: IPInfo
     
     var coordinate: CLLocationCoordinate2D {
-        return CLLocationCoordinate2D(latitude: ipInfo.lat, longitude: ipInfo.lon)
+        let coord = CLLocationCoordinate2D(latitude: ipInfo.lat, longitude: ipInfo.lon)
+        
+        // Валідація координат з fallback
+        guard coord.isValid else {
+            print("Invalid coordinates from IPInfo: lat=\(ipInfo.lat), lon=\(ipInfo.lon)")
+            // Повертаємо координати центру світу як fallback
+            return CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
+        }
+        
+        return coord
     }
     
     var title: String? {
-        return ipInfo.city
+        return ipInfo.city.isEmpty ? "Unknown Location" : ipInfo.city
     }
     
     var subtitle: String? {
-        return ipInfo.formattedLocation
+        return ipInfo.formattedLocation.isEmpty ? "No location data" : ipInfo.formattedLocation
     }
     
     init(ipInfo: IPInfo) {
@@ -181,7 +232,7 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         // Додаткова перевірка при виборі анотації
-        guard let annotation = view.annotation as? IPLocationAnnotation else { return }
+        guard view.annotation is IPLocationAnnotation else { return }
         
         // Легка анімація при виборі
         UIView.animate(withDuration: 0.2) {
@@ -204,14 +255,29 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
         let maxLatitudeDelta: CLLocationDegrees = 180.0
         let maxLongitudeDelta: CLLocationDegrees = 360.0
         
-        if mapView.region.span.latitudeDelta > maxLatitudeDelta ||
-           mapView.region.span.longitudeDelta > maxLongitudeDelta {
+        let currentRegion = mapView.region
+        
+        // Перевіряємо валідність поточного region
+        guard currentRegion.center.latitude.isFinite &&
+              currentRegion.center.longitude.isFinite &&
+              currentRegion.span.latitudeDelta.isFinite &&
+              currentRegion.span.longitudeDelta.isFinite &&
+              !currentRegion.center.latitude.isNaN &&
+              !currentRegion.center.longitude.isNaN &&
+              !currentRegion.span.latitudeDelta.isNaN &&
+              !currentRegion.span.longitudeDelta.isNaN else {
+            print("Invalid region detected in regionDidChangeAnimated")
+            return
+        }
+        
+        if currentRegion.span.latitudeDelta > maxLatitudeDelta ||
+           currentRegion.span.longitudeDelta > maxLongitudeDelta {
             
             let constrainedRegion = MKCoordinateRegion(
-                center: mapView.region.center,
+                center: currentRegion.center,
                 span: MKCoordinateSpan(
-                    latitudeDelta: min(mapView.region.span.latitudeDelta, maxLatitudeDelta),
-                    longitudeDelta: min(mapView.region.span.longitudeDelta, maxLongitudeDelta)
+                    latitudeDelta: min(currentRegion.span.latitudeDelta, maxLatitudeDelta),
+                    longitudeDelta: min(currentRegion.span.longitudeDelta, maxLongitudeDelta)
                 )
             )
             

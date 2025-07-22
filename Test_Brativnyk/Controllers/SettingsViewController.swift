@@ -148,26 +148,33 @@ class SettingsViewController: UIViewController {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Тільки чисте посилання на GitHub репозиторій
+        // Створюємо текст для поділу замість прямого URL
+        let shareText = NSLocalizedString("share_app_text", comment: "Check out this amazing app!")
         let githubURL = "https://github.com/Denysyk/Test_Brativnyk"
+        let fullText = "\(shareText)\n\n\(githubURL)"
         
-        // Створюємо activity controller на background thread, щоб уникнути лагу
-        DispatchQueue.global(qos: .userInitiated).async {
-            let activityViewController = UIActivityViewController(
-                activityItems: [githubURL], // Тільки URL без тексту
-                applicationActivities: nil
-            )
-            
-            // Повертаємося на main thread для показу
-            DispatchQueue.main.async {
-                // Для iPad
-                if let popover = activityViewController.popoverPresentationController {
-                    popover.sourceView = self.view
-                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
-                }
-                
-                self.present(activityViewController, animated: true)
-            }
+        // Створюємо activity controller з текстом замість URL об'єкта
+        let activityViewController = UIActivityViewController(
+            activityItems: [fullText],
+            applicationActivities: nil
+        )
+        
+        // Виключаємо деякі активності, які можуть викликати проблеми
+        activityViewController.excludedActivityTypes = [
+            .assignToContact,
+            .saveToCameraRoll,
+            .addToReadingList,
+            .openInIBooks
+        ]
+        
+        // Для iPad
+        if let popover = activityViewController.popoverPresentationController {
+            popover.sourceView = self.view
+            popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(activityViewController, animated: true) { [weak self] in
         }
     }
     
@@ -179,10 +186,11 @@ class SettingsViewController: UIViewController {
         let contactURL = "https://healthy-metal-aa6.notion.site/iOS-Developer-12831b2ac19680068ac3fcd91252b819?pvs=74"
         
         if let url = URL(string: contactURL) {
-            UIApplication.shared.open(url) { success in
-                if !success {
-                    DispatchQueue.main.async {
-                        self.showContactFailureAlert()
+            // Використовуємо UIApplication.shared.open з completion handler
+            UIApplication.shared.open(url, options: [:]) { [weak self] success in
+                DispatchQueue.main.async {
+                    if !success {
+                        self?.showContactFailureAlert()
                     }
                 }
             }
