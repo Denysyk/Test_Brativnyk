@@ -91,11 +91,46 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
             self.customTabBar.transform = .identity
         }
     }
+    
+    // MARK: - UITabBarControllerDelegate
+    func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+        // FIXED: Більш специфічна очистка input sessions перед переключенням
+        if let currentNav = selectedViewController as? UINavigationController,
+           let currentVC = currentNav.topViewController {
+            
+            // Спеціальна обробка для ChatViewController
+            if let chatVC = currentVC as? ChatViewController {
+                chatVC.view.endEditing(true)
+            } else {
+                currentVC.view.endEditing(true)
+            }
+        }
+        
+        // Загальна очистка
+        view.endEditing(true)
+        return true
+    }
+    
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        // FIXED: Очистка після переключення - без затримки
+        view.endEditing(true)
+    }
 }
 
 // MARK: - CustomTabBarDelegate
 extension TabBarController: CustomTabBarDelegate {
     func didSelectTab(at index: Int) {
+        // FIXED: Більш агресивна очистка input sessions згідно з форумами
+        if let currentVC = selectedViewController as? UINavigationController,
+           let chatVC = currentVC.topViewController as? ChatViewController {
+            // Специфічно для ChatViewController - прибираємо firstResponder
+            chatVC.view.endEditing(true)
+        }
+        
+        // Загальна очистка для всіх view controllers
+        view.endEditing(true)
+        
+        // Встановлюємо новий індекс без затримки
         selectedIndex = index
     }
 }
