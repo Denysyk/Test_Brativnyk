@@ -34,17 +34,9 @@ class SettingsViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        // FIXED: Більш агресивна очистка input sessions згідно з форумами
-        DispatchQueue.main.async {
-            // Очищуємо всі можливі firstResponders в ієрархії
-            self.view.endEditing(true)
-            
-            // Додаткова перевірка для TabBarController
-            if let tabBar = self.tabBarController {
-                tabBar.view.endEditing(true)
-            }
-        }
+        // Цей виклик гарантує, що якщо клавіатура з якоїсь причини
+        // все ще активна, вона буде прихована при появі екрана налаштувань.
+        self.view.endEditing(true)
     }
     
     // MARK: - Setup Methods
@@ -113,82 +105,73 @@ class SettingsViewController: UIViewController {
     
     // MARK: - Actions
     private func rateApp() {
+        // Простіше закриття input sessions
+        view.endEditing(true)
+        
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Просто зірочки без зайвого
-        showSimpleStarRating()
+        // Мінімальна затримка перед показом алерту
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.showSimpleStarRating()
+        }
     }
     
     private func showSimpleStarRating() {
-        // Forcefully end editing in the entire app
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        let alert = UIAlertController(
+            title: NSLocalizedString("Rate App", comment: ""),
+            message: NSLocalizedString("rate_app_message", comment: ""),
+            preferredStyle: .alert
+        )
         
-        // Add a delay to ensure all input sessions are properly closed
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            let alert = UIAlertController(
-                title: NSLocalizedString("Rate App", comment: ""),
-                message: NSLocalizedString("rate_app_message", comment: ""),
-                preferredStyle: .alert
-            )
-            
-            // 5 star options
-            for i in 1...5 {
-                let stars = String(repeating: "★", count: i)
-                let action = UIAlertAction(title: stars, style: .default) { _ in
+        // 5 star options
+        for i in 1...5 {
+            let stars = String(repeating: "★", count: i)
+            let action = UIAlertAction(title: stars, style: .default) { _ in
+                // Мінімальна затримка перед наступним алертом
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     self.showSimpleThankYou()
                 }
-                action.setValue(UIColor.systemBlue, forKey: "titleTextColor")
-                alert.addAction(action)
             }
-            
-            alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
-            
-            // Ensure presentation happens on top of everything
-            DispatchQueue.main.async {
-                self.present(alert, animated: true)
-            }
+            action.setValue(UIColor.systemBlue, forKey: "titleTextColor")
+            alert.addAction(action)
         }
+        
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+        present(alert, animated: true)
     }
     
-    // FIXED: Оновлений метод showSimpleThankYou
     private func showSimpleThankYou() {
-        // FIXED: Додаємо затримку перед показом наступного алерту
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let alert = UIAlertController(
-                title: NSLocalizedString("Thank You!", comment: ""),
-                message: NSLocalizedString("thank_you_feedback", comment: ""),
-                preferredStyle: .alert
-            )
-            
-            alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
-            self.present(alert, animated: true)
-        }
+        let alert = UIAlertController(
+            title: NSLocalizedString("Thank You!", comment: ""),
+            message: NSLocalizedString("thank_you_feedback", comment: ""),
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
+        present(alert, animated: true)
     }
     
     private func shareApp() {
+        // Простіше закриття input sessions
+        view.endEditing(true)
+        
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // FIXED: Прибираємо input sessions перед показом share sheet
-        view.endEditing(true)
-        
-        // Створюємо текст для поділу замість прямого URL
         let shareText = NSLocalizedString("share_app_text", comment: "Check out this amazing app!")
         let githubURL = "https://github.com/Denysyk/Test_Brativnyk"
         let fullText = "\(shareText)\n\n\(githubURL)"
         
-        // FIXED: Додаємо затримку перед показом activity controller
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Створюємо activity controller з текстом замість URL об'єкта
+        // Мінімальна затримка
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             let activityViewController = UIActivityViewController(
                 activityItems: [fullText],
                 applicationActivities: nil
             )
             
-            // Виключаємо деякі активності, які можуть викликати проблеми
             activityViewController.excludedActivityTypes = [
                 .assignToContact,
                 .saveToCameraRoll,
@@ -207,59 +190,53 @@ class SettingsViewController: UIViewController {
         }
     }
     
-    // FIXED: Оновлений метод contactUs
     private func contactUs() {
+        // Простіше закриття input sessions
+        view.endEditing(true)
+        
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
-        
-        // FIXED: Прибираємо всі input sessions
-        view.endEditing(true)
         
         let contactURL = "https://healthy-metal-aa6.notion.site/iOS-Developer-12831b2ac19680068ac3fcd91252b819?pvs=74"
         
         if let url = URL(string: contactURL) {
             UIApplication.shared.open(url, options: [:]) { [weak self] success in
-                DispatchQueue.main.async {
-                    if !success {
+                if !success {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         self?.showContactFailureAlert()
                     }
                 }
             }
         } else {
-            showContactFailureAlert()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.showContactFailureAlert()
+            }
         }
     }
     
-    // FIXED: Оновлений метод showContactFailureAlert
     private func showContactFailureAlert() {
-        // FIXED: Додаємо затримку та прибираємо input sessions
-        view.endEditing(true)
+        let alert = UIAlertController(
+            title: NSLocalizedString("Contact Us", comment: ""),
+            message: NSLocalizedString("contact_us_fallback_message", comment: ""),
+            preferredStyle: .alert
+        )
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let alert = UIAlertController(
-                title: NSLocalizedString("Contact Us", comment: ""),
-                message: NSLocalizedString("contact_us_fallback_message", comment: ""),
-                preferredStyle: .alert
-            )
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Copy Link", comment: ""), style: .default) { _ in
+            UIPasteboard.general.string = "https://healthy-metal-aa6.notion.site/iOS-Developer-12831b2ac19680068ac3fcd91252b819?pvs=74"
             
-            alert.addAction(UIAlertAction(title: NSLocalizedString("Copy Link", comment: ""), style: .default) { _ in
-                UIPasteboard.general.string = "https://healthy-metal-aa6.notion.site/iOS-Developer-12831b2ac19680068ac3fcd91252b819?pvs=74"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                let copiedAlert = UIAlertController(title: NSLocalizedString("Copied!", comment: ""), message: nil, preferredStyle: .alert)
+                self.present(copiedAlert, animated: true)
                 
-                // FIXED: Додаємо затримку перед показом copied alert
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    let copiedAlert = UIAlertController(title: NSLocalizedString("Copied!", comment: ""), message: nil, preferredStyle: .alert)
-                    self.present(copiedAlert, animated: true)
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        copiedAlert.dismiss(animated: true)
-                    }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    copiedAlert.dismiss(animated: true)
                 }
-            })
-            
-            alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
-            self.present(alert, animated: true)
-        }
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default))
+        present(alert, animated: true)
     }
 }
 
@@ -296,12 +273,12 @@ extension SettingsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        // FIXED: Прибираємо input sessions перед виконанням action
+        // Простіше закриття input sessions
         view.endEditing(true)
         
         let item = settingsItems[indexPath.row]
         
-        // FIXED: Додаємо затримку перед виконанням action
+        // Мінімальна затримка
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             item.action()
         }

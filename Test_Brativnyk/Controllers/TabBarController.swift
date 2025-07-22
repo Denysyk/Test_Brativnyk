@@ -71,7 +71,7 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
         // Встановлюємо звичайний заголовок
         viewController.navigationItem.title = title
         
-        // Додаткові налаштування навігаційного бара (опціонально)
+        // Додаткові налаштування навігаційного бара
         navController.navigationBar.isTranslucent = true
         
         return navController
@@ -93,44 +93,39 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
     }
     
     // MARK: - UITabBarControllerDelegate
+    // КРИТИЧНО ВАЖЛИВО: Цей метод закриває input sessions ДО переходу
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
-        // Forcefully end editing in current view controller
-        if let nav = selectedViewController as? UINavigationController {
-            nav.topViewController?.view.endEditing(true)
-            if let chatVC = nav.topViewController as? ChatViewController {
-                chatVC.cleanupInputSessions()
-            }
+        // 1. Перевіряємо, чи ми не намагаємося вибрати вже вибрану вкладку
+        guard selectedViewController != viewController else {
+            return false
         }
-        
-        // Add small delay to allow input system to clean up
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.selectedIndex = tabBarController.viewControllers?.firstIndex(of: viewController) ?? 0
+
+        // 2. КРИТИЧНО ВАЖЛИВО: закриваємо input sessions ДО переходу
+        if let currentVC = selectedViewController {
+            currentVC.view.endEditing(true)
         }
-        
+
+        // 3. Дозволяємо перехід. Система сама обробить решту.
         return true
-    }
-    
-    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        // FIXED: Очистка після переключення - без затримки
-        view.endEditing(true)
     }
 }
 
 // MARK: - CustomTabBarDelegate
 extension TabBarController: CustomTabBarDelegate {
+    // КРИТИЧНО: Закриваємо input sessions при переході через custom tab bar
     func didSelectTab(at index: Int) {
-        // FIXED: Більш агресивна очистка input sessions згідно з форумами
-        if let currentVC = selectedViewController as? UINavigationController,
-           let chatVC = currentVC.topViewController as? ChatViewController {
-            // Специфічно для ChatViewController - прибираємо firstResponder
-            chatVC.view.endEditing(true)
+        // Перевіряємо, чи ми не намагаємося вибрати вже вибрану вкладку
+        if self.selectedIndex == index {
+            return
+        }
+
+        // КРИТИЧНО: закриваємо input sessions ДО зміни індексу
+        if let currentVC = self.selectedViewController {
+            currentVC.view.endEditing(true)
         }
         
-        // Загальна очистка для всіх view controllers
-        view.endEditing(true)
-        
-        // Встановлюємо новий індекс без затримки
-        selectedIndex = index
+        // Тепер змінюємо індекс
+        self.selectedIndex = index
     }
 }
 

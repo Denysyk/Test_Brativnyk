@@ -27,6 +27,9 @@
 "Start a new conversation? Current chat will be saved." = "Start a new conversation? Current chat will be saved.";
 "Start typing to begin conversation" = "Start typing to begin conversation";
 
+// Keyboard accessory
+"Done" = "Done";
+
 // History Screen
 "No Chat History" = "No Chat History";
 "Start a conversation to see your chat history here" = "Start a conversation to see your chat history here";

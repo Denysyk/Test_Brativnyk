@@ -18,15 +18,19 @@ extension MKMapView {
               radiusInMeters.isFinite,
               !radiusInMeters.isNaN,
               !radiusInMeters.isInfinite,
-              radiusInMeters > 0 else {
+              radiusInMeters > 0,
+              radiusInMeters < 40075000 else { // Circumference of Earth
             print("Invalid parameters for setRegion: center=\(center), radius=\(radiusInMeters)")
             return
         }
         
+        // Обмежуємо radius для зменшення mesh помилок
+        let safeRadius = min(radiusInMeters, 200000) // Max 200km
+        
         let region = MKCoordinateRegion(
             center: center,
-            latitudinalMeters: radiusInMeters,
-            longitudinalMeters: radiusInMeters
+            latitudinalMeters: safeRadius,
+            longitudinalMeters: safeRadius
         )
         
         // Додаткова перевірка валідності region
@@ -46,7 +50,75 @@ extension MKMapView {
             return
         }
         
-        setRegion(region, animated: animated)
+        // Встановлюємо регіон з затримкою для стабільності
+        DispatchQueue.main.async {
+            self.setRegion(region, animated: animated)
+        }
+    }
+    
+    /// Оптимізоване налаштування карти для IP локації з мінімізацією mesh помилок
+    func setupForIPLocationOptimized() {
+        // Базові налаштування
+        mapType = .standard
+        showsUserLocation = false
+        isZoomEnabled = true
+        isScrollEnabled = true
+        isRotateEnabled = false
+        isPitchEnabled = false
+        
+        // ВАЖЛИВО: Вимикаємо все зайве для мінімізації mesh помилок
+        showsBuildings = false
+        showsTraffic = false
+        showsCompass = false
+        showsScale = false
+        
+        // Встановлюємо фільтр POI
+        pointOfInterestFilter = .excludingAll
+        
+        // Встановлюємо camera constraints для обмеження zoom
+        let cameraConstraints = MKMapView.CameraBoundary(
+            coordinateRegion: MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                latitudinalMeters: 40075000, // Circumference of Earth
+                longitudinalMeters: 40075000
+            )
+        )
+        setCameraBoundary(cameraConstraints, animated: false)
+        
+        let zoomRange = MKMapView.CameraZoomRange(
+            minCenterCoordinateDistance: 1000,    // 1km мінімум
+            maxCenterCoordinateDistance: 10000000  // 10,000km максимум
+        )
+        setCameraZoomRange(zoomRange, animated: false)
+        
+        // Стиль карти
+        layer.cornerRadius = 16
+        clipsToBounds = true
+        
+        // Subtle border
+        layer.borderWidth = 0.5
+        layer.borderColor = UIColor.separator.cgColor
+        
+        // Interaction
+        isUserInteractionEnabled = true
+        
+        // КРИТИЧНО: Налаштування для зменшення mesh помилок
+        // Встановлюємо preferredConfiguration для iOS 17+
+        if #available(iOS 17.0, *) {
+            let config = MKStandardMapConfiguration()
+            config.emphasisStyle = .muted
+            config.pointOfInterestFilter = .excludingAll
+            config.showsTraffic = false
+            preferredConfiguration = config
+        }
+        
+        // Додаткові оптимізації для зменшення навантаження (iOS 16+)
+        selectableMapFeatures = []
+    }
+    
+    /// Legacy method for backward compatibility
+    func setupForIPLocation() {
+        setupForIPLocationOptimized()
     }
     
     /// Adds a custom pin annotation with styling
@@ -71,50 +143,40 @@ extension MKMapView {
         let annotationsToRemove = annotations.filter { !($0 is MKUserLocation) }
         removeAnnotations(annotationsToRemove)
     }
-    
-    /// Sets up map for IP location display
-    func setupForIPLocation() {
-        mapType = .standard
-        showsUserLocation = false
-        isZoomEnabled = true
-        isScrollEnabled = true
-        isRotateEnabled = false
-        isPitchEnabled = false
-        
-        // Add subtle style
-        layer.cornerRadius = 16
-        clipsToBounds = true
-        
-        // Add border for better visibility
-        layer.borderWidth = 0.5
-        layer.borderColor = UIColor.separator.cgColor
-        
-        // Prevent automatic region changes
-        isUserInteractionEnabled = true
-    }
 }
 
 // MARK: - CLLocationCoordinate2D Extensions
 extension CLLocationCoordinate2D {
     
-    /// Checks if coordinate is valid with additional NaN checks
+    /// Покращена перевірка валідності з додатковими обмеженнями
     var isValid: Bool {
-        return CLLocationCoordinate2DIsValid(self) &&
-               (latitude != 0.0 || longitude != 0.0) &&
-               abs(latitude) <= 90.0 &&
-               abs(longitude) <= 180.0 &&
-               latitude.isFinite &&
-               longitude.isFinite &&
-               !latitude.isNaN &&
-               !longitude.isNaN &&
-               !latitude.isInfinite &&
-               !longitude.isInfinite
+        // Базові перевірки
+        guard CLLocationCoordinate2DIsValid(self) else { return false }
+        
+        // Перевірка на нулеві координати (може бути проблемним для деяких API)
+        guard !(latitude == 0.0 && longitude == 0.0) else { return false }
+        
+        // Перевірка на валідні діапазони
+        guard abs(latitude) <= 90.0 && abs(longitude) <= 180.0 else { return false }
+        
+        // Перевірка на finite значення
+        guard latitude.isFinite && longitude.isFinite else { return false }
+        
+        // Перевірка на NaN та Infinite
+        guard !latitude.isNaN && !longitude.isNaN &&
+              !latitude.isInfinite && !longitude.isInfinite else { return false }
+        
+        // Додаткові перевірки на розумні значення
+        // Виключаємо екстремальні значення, які можуть викликати mesh помилки
+        guard abs(latitude) >= 0.000001 || abs(longitude) >= 0.000001 else { return false }
+        
+        return true
     }
     
-    /// Returns formatted string representation
+    /// Безпечне форматування координат
     var formattedString: String {
         guard isValid else {
-            return "Invalid coordinates"
+            return NSLocalizedString("Invalid coordinates", comment: "")
         }
         
         return LocalizationManager.shared.formatCoordinates(
@@ -123,7 +185,7 @@ extension CLLocationCoordinate2D {
         )
     }
     
-    /// Distance between two coordinates in meters
+    /// Безпечна відстань між координатами
     func distance(to coordinate: CLLocationCoordinate2D) -> CLLocationDistance {
         guard isValid && coordinate.isValid else { return 0 }
         
@@ -186,22 +248,24 @@ class IPInfoAnnotation: NSObject, IPLocationAnnotation {
     var coordinate: CLLocationCoordinate2D {
         let coord = CLLocationCoordinate2D(latitude: ipInfo.lat, longitude: ipInfo.lon)
         
-        // Валідація координат з fallback
+        // Валідація координат з кращим fallback
         guard coord.isValid else {
             print("Invalid coordinates from IPInfo: lat=\(ipInfo.lat), lon=\(ipInfo.lon)")
-            // Повертаємо координати центру світу як fallback
-            return CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
+            // Повертаємо безпечні координати замість 0,0
+            return CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194) // San Francisco as fallback
         }
         
         return coord
     }
     
     var title: String? {
-        return ipInfo.city.isEmpty ? "Unknown Location" : ipInfo.city
+        let cityName = ipInfo.city.trimmingCharacters(in: .whitespacesAndNewlines)
+        return cityName.isEmpty ? "Unknown Location" : cityName
     }
     
     var subtitle: String? {
-        return ipInfo.formattedLocation.isEmpty ? "No location data" : ipInfo.formattedLocation
+        let location = ipInfo.formattedLocation.trimmingCharacters(in: .whitespacesAndNewlines)
+        return location.isEmpty ? "No location data" : location
     }
     
     init(ipInfo: IPInfo) {
@@ -210,7 +274,7 @@ class IPInfoAnnotation: NSObject, IPLocationAnnotation {
     }
 }
 
-// MARK: - Map Delegate Helper
+// MARK: - Enhanced Map Delegate Helper
 class MapViewHelper: NSObject, MKMapViewDelegate {
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
@@ -231,7 +295,6 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        // Додаткова перевірка при виборі анотації
         guard view.annotation is IPLocationAnnotation else { return }
         
         // Легка анімація при виборі
@@ -250,11 +313,8 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
         view.layer.removeAllAnimations()
     }
     
+    // ВАЖЛИВО: Оптимізований regionDidChangeAnimated для зменшення mesh помилок
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        // Обмежуємо надто далекі зуми для стабільності
-        let maxLatitudeDelta: CLLocationDegrees = 180.0
-        let maxLongitudeDelta: CLLocationDegrees = 360.0
-        
         let currentRegion = mapView.region
         
         // Перевіряємо валідність поточного region
@@ -266,18 +326,45 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
               !currentRegion.center.longitude.isNaN &&
               !currentRegion.span.latitudeDelta.isNaN &&
               !currentRegion.span.longitudeDelta.isNaN else {
-            print("Invalid region detected in regionDidChangeAnimated")
             return
         }
         
-        if currentRegion.span.latitudeDelta > maxLatitudeDelta ||
-           currentRegion.span.longitudeDelta > maxLongitudeDelta {
-            
+        // Обмежуємо надто далекі зуми для зменшення mesh помилок
+        let maxLatitudeDelta: CLLocationDegrees = 45.0   // Ще більше зменшено
+        let maxLongitudeDelta: CLLocationDegrees = 90.0  // Ще більше зменшено
+        let minLatitudeDelta: CLLocationDegrees = 0.01   // Збільшено мінімум
+        let minLongitudeDelta: CLLocationDegrees = 0.01
+        
+        var needsUpdate = false
+        var newLatitudeDelta = currentRegion.span.latitudeDelta
+        var newLongitudeDelta = currentRegion.span.longitudeDelta
+        
+        // Перевіряємо максимальні значення
+        if currentRegion.span.latitudeDelta > maxLatitudeDelta {
+            newLatitudeDelta = maxLatitudeDelta
+            needsUpdate = true
+        }
+        if currentRegion.span.longitudeDelta > maxLongitudeDelta {
+            newLongitudeDelta = maxLongitudeDelta
+            needsUpdate = true
+        }
+        
+        // Перевіряємо мінімальні значення
+        if currentRegion.span.latitudeDelta < minLatitudeDelta {
+            newLatitudeDelta = minLatitudeDelta
+            needsUpdate = true
+        }
+        if currentRegion.span.longitudeDelta < minLongitudeDelta {
+            newLongitudeDelta = minLongitudeDelta
+            needsUpdate = true
+        }
+        
+        if needsUpdate {
             let constrainedRegion = MKCoordinateRegion(
                 center: currentRegion.center,
                 span: MKCoordinateSpan(
-                    latitudeDelta: min(currentRegion.span.latitudeDelta, maxLatitudeDelta),
-                    longitudeDelta: min(currentRegion.span.longitudeDelta, maxLongitudeDelta)
+                    latitudeDelta: newLatitudeDelta,
+                    longitudeDelta: newLongitudeDelta
                 )
             )
             
@@ -288,7 +375,6 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let annotation = view.annotation as? IPLocationAnnotation else { return }
         
-        // Handle tap on callout accessory (detail disclosure button)
         let alertController = UIAlertController(
             title: annotation.ipInfo.city,
             message: """
@@ -319,6 +405,24 @@ class MapViewHelper: NSObject, MKMapViewDelegate {
             
             presentingController.present(alertController, animated: true)
         }
+    }
+    
+    // ВАЖЛИВО: Додаємо delegate методи для мінімізації mesh помилок
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        // Повертаємо мінімальний renderer для зменшення навантаження
+        return MKOverlayRenderer(overlay: overlay)
+    }
+    
+    func mapViewWillStartLoadingMap(_ mapView: MKMapView) {
+        // Додаткові оптимізації при початку завантаження карти
+        mapView.showsBuildings = false
+        mapView.showsTraffic = false
+    }
+    
+    func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
+        // Підтверджуємо оптимізації після завантаження карти
+        mapView.showsBuildings = false
+        mapView.showsTraffic = false
     }
 }
 

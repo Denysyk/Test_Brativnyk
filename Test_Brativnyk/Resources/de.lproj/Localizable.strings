@@ -27,6 +27,9 @@
 "Start a new conversation? Current chat will be saved." = "Neue Unterhaltung beginnen? Der aktuelle Chat wird gespeichert.";
 "Start typing to begin conversation" = "Beginnen Sie zu tippen, um das Gespräch zu starten";
 
+// Keyboard accessory
+"Done" = "Fertig";
+
 // History Screen
 "No Chat History" = "Kein Chat-Verlauf";
 "Start a conversation to see your chat history here" = "Beginnen Sie eine Unterhaltung, um Ihren Chat-Verlauf hier zu sehen";
