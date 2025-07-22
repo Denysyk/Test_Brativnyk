@@ -121,37 +121,34 @@ class SettingsViewController: UIViewController {
         showSimpleStarRating()
     }
     
-    // FIXED: Оновлений метод showSimpleStarRating згідно з форумами
     private func showSimpleStarRating() {
-        // FIXED: Агресивна очистка всіх input sessions перед показом алерту
-        if let tabBar = tabBarController {
-            tabBar.view.endEditing(true)
-        }
-        view.endEditing(true)
+        // Forcefully end editing in the entire app
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
-        // FIXED: Збільшена затримка для повного завершення input operations
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        // Add a delay to ensure all input sessions are properly closed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             let alert = UIAlertController(
                 title: NSLocalizedString("Rate App", comment: ""),
                 message: NSLocalizedString("rate_app_message", comment: ""),
                 preferredStyle: .alert
             )
             
-            // 5 синіх зірочок star.fill
+            // 5 star options
             for i in 1...5 {
                 let stars = String(repeating: "★", count: i)
-                
                 let action = UIAlertAction(title: stars, style: .default) { _ in
                     self.showSimpleThankYou()
                 }
-                
                 action.setValue(UIColor.systemBlue, forKey: "titleTextColor")
                 alert.addAction(action)
             }
             
             alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
             
-            self.present(alert, animated: true)
+            // Ensure presentation happens on top of everything
+            DispatchQueue.main.async {
+                self.present(alert, animated: true)
+            }
         }
     }
     

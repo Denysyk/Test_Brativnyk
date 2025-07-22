@@ -94,20 +94,19 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
     
     // MARK: - UITabBarControllerDelegate
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
-        // FIXED: Більш специфічна очистка input sessions перед переключенням
-        if let currentNav = selectedViewController as? UINavigationController,
-           let currentVC = currentNav.topViewController {
-            
-            // Спеціальна обробка для ChatViewController
-            if let chatVC = currentVC as? ChatViewController {
-                chatVC.view.endEditing(true)
-            } else {
-                currentVC.view.endEditing(true)
+        // Forcefully end editing in current view controller
+        if let nav = selectedViewController as? UINavigationController {
+            nav.topViewController?.view.endEditing(true)
+            if let chatVC = nav.topViewController as? ChatViewController {
+                chatVC.cleanupInputSessions()
             }
         }
         
-        // Загальна очистка
-        view.endEditing(true)
+        // Add small delay to allow input system to clean up
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.selectedIndex = tabBarController.viewControllers?.firstIndex(of: viewController) ?? 0
+        }
+        
         return true
     }
     
