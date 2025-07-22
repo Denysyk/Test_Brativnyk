@@ -45,9 +45,7 @@ class ChatViewController: UIViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
-        // FIXED: Прибираємо firstResponder при переході з екрану
-        view.endEditing(true)
+        cleanupInputSessions()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -88,6 +86,19 @@ class ChatViewController: UIViewController {
                     )
                 }
             }
+        }
+    }
+    
+    // MARK: - Input Session Cleanup
+    func cleanupInputSessions() {
+        // Forcefully end editing
+        view.endEditing(true)
+        textView.resignFirstResponder()
+        
+        // Extra safety measure
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.textView.inputView = nil
+            self.textView.inputAccessoryView = nil
         }
     }
     
@@ -145,7 +156,6 @@ class ChatViewController: UIViewController {
         view.addSubview(emptyStateView)
     }
     
-    // MARK: - TextView Setup
     private func setupTextViewSafely() {
         textView.delegate = self
         textView.frame = CGRect(x: 0, y: 0, width: 300, height: minTextViewHeight)
@@ -418,6 +428,7 @@ class ChatViewController: UIViewController {
     }
     
     private func createNewChat() {
+        cleanupInputSessions()
         chatId = nil
         messages.removeAll()
         
@@ -574,6 +585,8 @@ class ChatViewController: UIViewController {
     }
     
     @objc private func newChatButtonTapped() {
+        cleanupInputSessions()
+        
         if !messages.isEmpty {
             let alert = UIAlertController(
                 title: NSLocalizedString("New Chat", comment: ""),
@@ -619,6 +632,7 @@ class ChatViewController: UIViewController {
     
     // MARK: - Public Methods
     func loadChatWithId(_ id: String) {
+        cleanupInputSessions()
         chatId = id
         loadMessages()
         
@@ -637,6 +651,8 @@ class ChatViewController: UIViewController {
     }
     
     @objc private func backToHistoryTapped() {
+        cleanupInputSessions()
+        
         if let tabBarController = tabBarController as? TabBarController {
             tabBarController.selectedIndex = 2
         }
