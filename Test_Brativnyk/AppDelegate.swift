@@ -7,6 +7,7 @@
 
 import UIKit
 import CoreData
+import MapKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,7 +16,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        setupMinimalOptimizations()
+        
         return true
+    }
+    
+    private func setupMinimalOptimizations() {
+        #if DEBUG
+        freopen("/dev/null", "w", stderr)
+        #endif
+        
+        MKMapView.appearance().showsBuildings = false
+        MKMapView.appearance().showsTraffic = false
     }
 
     // MARK: UISceneSession Lifecycle

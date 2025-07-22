@@ -25,6 +25,7 @@ class ChatViewController: UIViewController {
     private var inputContainerBottomConstraint: NSLayoutConstraint!
     private var inputContainerHeightConstraint: NSLayoutConstraint!
     private var isTyping = false
+    private var hasAppeared = false
     private var maxTextViewHeight: CGFloat = 120.0
     private var minTextViewHeight: CGFloat = 44.0
     
@@ -37,22 +38,31 @@ class ChatViewController: UIViewController {
         setupConstraints()
         setupKeyboardObservers()
         setupNavigationBar()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.loadInitialChatState()
-        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        cleanupInputSessions()
+        // Простого resignFirstResponder тут достатньо.
+        // TabBarController візьме на себе більш глибоке очищення.
+        textView.resignFirstResponder()
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Додаткова підстраховка без агресивних викликів
+        textView.resignFirstResponder()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
+        if !hasAppeared {
+            hasAppeared = true
+            loadInitialChatState()
+        }
+
         if !messages.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.scrollToBottomWithoutAnimation()
             }
         }
@@ -89,17 +99,11 @@ class ChatViewController: UIViewController {
         }
     }
     
-    // MARK: - Input Session Cleanup
-    func cleanupInputSessions() {
-        // Forcefully end editing
-        view.endEditing(true)
-        textView.resignFirstResponder()
-        
-        // Extra safety measure
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.textView.inputView = nil
-            self.textView.inputAccessoryView = nil
-        }
+    deinit {
+        // Очищуємо observer'и при знищенні
+        NotificationCenter.default.removeObserver(self)
+        // При deinit можемо очистити accessory view
+        textView.inputAccessoryView = nil
     }
     
     // MARK: - Safe Constants Initialization
@@ -184,7 +188,80 @@ class ChatViewController: UIViewController {
         textView.smartInsertDeleteType = .no
         textView.contentMode = .topLeft
         
+        // ВАЖЛИВО: Встановлюємо returnKeyType для кращої обробки
+        textView.returnKeyType = .send
+        textView.enablesReturnKeyAutomatically = true
+        
+        // Додаємо кнопку закриття клавіатури
+        setupKeyboardAccessoryView()
+        
         inputContainerView.addSubview(textView)
+    }
+    
+    private func setupKeyboardAccessoryView() {
+        let accessoryView = createKeyboardAccessoryView()
+        textView.inputAccessoryView = accessoryView
+    }
+    
+    private func createKeyboardAccessoryView() -> UIView {
+        // Створюємо container для accessory view
+        let accessoryContainer = UIView()
+        accessoryContainer.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.95)
+        accessoryContainer.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Додаємо blur effect для красивого вигляду
+        let blurEffect = UIBlurEffect(style: .systemMaterial)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        accessoryContainer.addSubview(blurView)
+        
+        // Створюємо кнопку закриття клавіатури
+        let dismissButton = UIButton(type: .system)
+        dismissButton.setImage(UIImage(systemName: "keyboard.chevron.compact.down"), for: .normal)
+        dismissButton.tintColor = UIColor.label
+        dismissButton.backgroundColor = UIColor.secondarySystemBackground
+        dismissButton.layer.cornerRadius = 8
+        dismissButton.layer.masksToBounds = true
+        dismissButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Додаємо haptic feedback та анімацію
+        dismissButton.addTarget(self, action: #selector(keyboardDismissButtonTapped), for: .touchUpInside)
+        dismissButton.addTarget(self, action: #selector(dismissButtonTouchDown), for: .touchDown)
+        dismissButton.addTarget(self, action: #selector(dismissButtonTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
+        
+        accessoryContainer.addSubview(dismissButton)
+        
+        // Створюємо separator лінію
+        let separatorLine = UIView()
+        separatorLine.backgroundColor = UIColor.separator
+        separatorLine.translatesAutoresizingMaskIntoConstraints = false
+        accessoryContainer.addSubview(separatorLine)
+        
+        // Встановлюємо constraints
+        NSLayoutConstraint.activate([
+            // Blur view заповнює весь container
+            blurView.topAnchor.constraint(equalTo: accessoryContainer.topAnchor),
+            blurView.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor),
+            blurView.bottomAnchor.constraint(equalTo: accessoryContainer.bottomAnchor),
+            
+            // Separator лінія зверху
+            separatorLine.topAnchor.constraint(equalTo: accessoryContainer.topAnchor),
+            separatorLine.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
+            separatorLine.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor),
+            separatorLine.heightAnchor.constraint(equalToConstant: 0.5),
+            
+            // Кнопка закриття справа
+            dismissButton.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor, constant: -16),
+            dismissButton.centerYAnchor.constraint(equalTo: accessoryContainer.centerYAnchor),
+            dismissButton.widthAnchor.constraint(equalToConstant: 44),
+            dismissButton.heightAnchor.constraint(equalToConstant: 32),
+            
+            // Висота всього accessory view
+            accessoryContainer.heightAnchor.constraint(equalToConstant: 50)
+        ])
+        
+        return accessoryContainer
     }
     
     private func setupNavigationBar() {
@@ -318,6 +395,11 @@ class ChatViewController: UIViewController {
         if let lastSession = lastChatSession, let sessionId = lastSession.id {
             chatId = sessionId
             loadMessages()
+            
+            // Додаємо прокрутку до низу після завантаження повідомлень
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.scrollToBottomWithoutAnimation()
+            }
         } else {
             chatId = nil
             messages = []
@@ -347,6 +429,12 @@ class ChatViewController: UIViewController {
         DispatchQueue.main.async {
             self.tableView.reloadData()
             self.updateEmptyState()
+            
+            if !self.messages.isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.scrollToBottomWithoutAnimation()
+                }
+            }
         }
     }
     
@@ -428,7 +516,7 @@ class ChatViewController: UIViewController {
     }
     
     private func createNewChat() {
-        cleanupInputSessions()
+        textView.resignFirstResponder()
         chatId = nil
         messages.removeAll()
         
@@ -585,23 +673,27 @@ class ChatViewController: UIViewController {
     }
     
     @objc private func newChatButtonTapped() {
-        cleanupInputSessions()
+        // Простіше закриття клавіатури
+        textView.resignFirstResponder()
         
-        if !messages.isEmpty {
-            let alert = UIAlertController(
-                title: NSLocalizedString("New Chat", comment: ""),
-                message: NSLocalizedString("Start a new conversation? Current chat will be saved.", comment: ""),
-                preferredStyle: .alert
-            )
-            
-            alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
-            alert.addAction(UIAlertAction(title: NSLocalizedString("New Chat", comment: ""), style: .default) { _ in
+        // Додаємо мінімальну затримку перед показом алерту
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if !self.messages.isEmpty {
+                let alert = UIAlertController(
+                    title: NSLocalizedString("New Chat", comment: ""),
+                    message: NSLocalizedString("Start a new conversation? Current chat will be saved.", comment: ""),
+                    preferredStyle: .alert
+                )
+                
+                alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel))
+                alert.addAction(UIAlertAction(title: NSLocalizedString("New Chat", comment: ""), style: .default) { _ in
+                    self.createNewChat()
+                })
+                
+                self.present(alert, animated: true)
+            } else {
                 self.createNewChat()
-            })
-            
-            present(alert, animated: true)
-        } else {
-            createNewChat()
+            }
         }
         
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
@@ -622,6 +714,36 @@ class ChatViewController: UIViewController {
         }
     }
     
+    // MARK: - Keyboard Accessory Actions
+    @objc private func keyboardDismissButtonTapped() {
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Простіше закриття клавіатури
+        textView.resignFirstResponder()
+    }
+    
+    @objc private func dismissButtonTouchDown() {
+        guard let accessoryView = textView.inputAccessoryView,
+              let dismissButton = accessoryView.subviews.last as? UIButton else { return }
+        
+        UIView.animate(withDuration: 0.1) {
+            dismissButton.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+            dismissButton.alpha = 0.7
+        }
+    }
+    
+    @objc private func dismissButtonTouchUp() {
+        guard let accessoryView = textView.inputAccessoryView,
+              let dismissButton = accessoryView.subviews.last as? UIButton else { return }
+        
+        UIView.animate(withDuration: 0.1) {
+            dismissButton.transform = .identity
+            dismissButton.alpha = 1.0
+        }
+    }
+    
     private func showTypingIndicator() {
         isTyping = true
     }
@@ -632,7 +754,7 @@ class ChatViewController: UIViewController {
     
     // MARK: - Public Methods
     func loadChatWithId(_ id: String) {
-        cleanupInputSessions()
+        textView.resignFirstResponder()
         chatId = id
         loadMessages()
         
@@ -651,7 +773,7 @@ class ChatViewController: UIViewController {
     }
     
     @objc private func backToHistoryTapped() {
-        cleanupInputSessions()
+        textView.resignFirstResponder()
         
         if let tabBarController = tabBarController as? TabBarController {
             tabBarController.selectedIndex = 2
@@ -739,7 +861,7 @@ extension ChatViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 extension ChatViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        view.endEditing(true)
+        textView.resignFirstResponder()
     }
 }
 

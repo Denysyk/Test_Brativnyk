@@ -31,11 +31,12 @@ class HistoryViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        loadChatSessions()
+        view.endEditing(true)
     }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        view.endEditing(true)
     }
     
     // MARK: - Setup Methods

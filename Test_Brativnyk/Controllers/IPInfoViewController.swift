@@ -47,17 +47,36 @@ class IPInfoViewController: UIViewController {
     private var currentIPInfo: IPInfo?
     private var mapAnnotation: IPInfoAnnotation?
     
-    // Створюємо карту та її помічника як lazy-властивості.
-    // Вони будуть ініціалізовані лише один раз при першому зверненні.
-    private lazy var mapHelper: MapViewHelper = MapViewHelper()
-    
+    // ВАЖЛИВО: Ліниво ініціалізуємо карту з оптимізованими налаштуваннями
     private lazy var mapView: MKMapView = {
         let mapView = MKMapView()
-        mapView.setupForIPLocation()
+        // Оптимізовані налаштування для зменшення системних попереджень
+        mapView.setupForIPLocationOptimized()
         mapView.delegate = self.mapHelper
-        mapView.isHidden = true // Початково прихована до завантаження даних
+        mapView.isHidden = true
+        
+        // Додаткові оптимізації
+        mapView.isPitchEnabled = false
+        mapView.isRotateEnabled = false
+        mapView.showsBuildings = false
+        mapView.showsTraffic = false
+        mapView.showsCompass = false
+        mapView.showsScale = false
+        
+        if #available(iOS 17.0, *) {
+            let config = MKStandardMapConfiguration()
+            config.emphasisStyle = .muted
+            config.pointOfInterestFilter = .excludingAll
+            mapView.preferredConfiguration = config
+        } else {
+            // Fallback для старіших версій iOS
+            mapView.pointOfInterestFilter = .excludingAll
+        }
+        
         return mapView
     }()
+    
+    private lazy var mapHelper: MapViewHelper = MapViewHelper()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -65,12 +84,22 @@ class IPInfoViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupNavigationBar()
-        loadIPInfo() // Завантажуємо дані при першому завантаженні view
+        
+        // Затримуємо завантаження даних для кращої ініціалізації карти
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.loadIPInfo()
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        view.endEditing(true)
     }
     
     deinit {
-        // Очищуємо делегат, щоб уникнути витоків пам'яті
+        // Правильно очищуємо карту при знищенні
         mapView.delegate = nil
+        mapView.removeAnnotations(mapView.annotations)
     }
 
     // MARK: - Setup Methods
@@ -86,8 +115,7 @@ class IPInfoViewController: UIViewController {
         // Content View
         scrollView.addSubview(contentView)
         
-        // Map View
-        // Додаємо карту до ієрархії одразу
+        // Map View - додаємо до ієрархії тільки коли потрібно
         contentView.addSubview(mapView)
 
         // Info Container
@@ -332,7 +360,12 @@ class IPInfoViewController: UIViewController {
         loadingView.isHidden = true
         errorView.isHidden = true
         infoContainerView.isHidden = false
-        mapView.isHidden = false
+        
+        // ВАЖЛИВО: Показуємо карту тільки після завантаження даних
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            self.mapView.isHidden = false
+        }
+        
         loadingIndicator.stopAnimating()
         navigationItem.rightBarButtonItem?.isEnabled = true
     }
@@ -359,8 +392,12 @@ class IPInfoViewController: UIViewController {
                 case .success(let ipInfo):
                     self.currentIPInfo = ipInfo
                     self.updateUI(with: ipInfo)
-                    self.updateMap(with: ipInfo)
-                    self.showContentState()
+                    
+                    // Затримуємо оновлення карти для кращої стабільності
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.updateMap(with: ipInfo)
+                        self.showContentState()
+                    }
                     
                 case .failure(let error):
                     self.showErrorState(message: error.localizedDescription)
@@ -381,22 +418,38 @@ class IPInfoViewController: UIViewController {
     }
 
     private func updateMap(with ipInfo: IPInfo) {
+        // Очищуємо попередні анотації
         if let existingAnnotation = mapAnnotation {
             mapView.removeAnnotation(existingAnnotation)
         }
         
         let annotation = IPInfoAnnotation(ipInfo: ipInfo)
+        
+        // Перевіряємо валідність координат
+        guard annotation.coordinate.isValid else {
+            print("Invalid coordinates for map annotation")
+            return
+        }
+        
         mapView.addAnnotation(annotation)
         mapAnnotation = annotation
         
-        mapView.setRegion(
+        // ВАЖЛИВО: Встановлюємо більш обмежений регіон для зменшення mesh помилок
+        let limitedRadius: CLLocationDistance = 25000 // 25km замість 50km
+        let safeRegion = MKCoordinateRegion(
             center: annotation.coordinate,
-            radiusInMeters: 50000,
-            animated: true
+            latitudinalMeters: limitedRadius,
+            longitudinalMeters: limitedRadius
         )
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.mapView.selectAnnotation(annotation, animated: true)
+        // Встановлюємо регіон з більшою затримкою для стабільності
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            self.mapView.setRegion(safeRegion, animated: true)
+            
+            // Виділяємо анотацію з ще більшою затримкою
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                self.mapView.selectAnnotation(annotation, animated: true)
+            }
         }
     }
 
