@@ -7,129 +7,73 @@
 
 import UIKit
 
-class TabBarController: UITabBarController, UITabBarControllerDelegate {
+class TabBarController: UITabBarController, UITabBarControllerDelegate, CustomTabBarManagerDelegate {
     
-    private var customTabBar: CustomTabBar!
+    // MARK: - Managers
+    private var customTabBarManager: CustomTabBarManager!
+    private var navigationManager: TabNavigationManager!
     
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.delegate = self
-        setupCustomTabBar()
+        setupTabBarController()
+        setupManagers()
         setupViewControllers()
     }
     
     // MARK: - Setup Methods
+    private func setupTabBarController() {
+        delegate = self
+        tabBar.isHidden = true
+    }
     
-    private func setupCustomTabBar() {
-        // Hide standard TabBar
-        self.tabBar.isHidden = true
+    private func setupManagers() {
+        customTabBarManager = CustomTabBarManager(parentView: view)
+        customTabBarManager.delegate = self
         
-        // Create custom TabBar
-        customTabBar = CustomTabBar()
-        customTabBar.delegate = self
-        
-        view.addSubview(customTabBar)
-        customTabBar.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            customTabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            customTabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            customTabBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10),
-            customTabBar.heightAnchor.constraint(equalToConstant: 70)
-        ])
+        navigationManager = TabNavigationManager(
+            tabBarController: self,
+            customTabBarManager: customTabBarManager
+        )
     }
     
     private func setupViewControllers() {
-        let chatVC = createViewController(
-            ChatViewController(),
-            title: NSLocalizedString("Chat", comment: "")
-        )
-        
-        let ipInfoVC = createViewController(
-            IPInfoViewController(),
-            title: NSLocalizedString("IP Info", comment: "")
-        )
-        
-        let historyVC = createViewController(
-            HistoryViewController(),
-            title: NSLocalizedString("History", comment: "")
-        )
-        
-        let settingsVC = createViewController(
-            SettingsViewController(),
-            title: NSLocalizedString("Settings", comment: "")
-        )
-        
-        viewControllers = [chatVC, ipInfoVC, historyVC, settingsVC]
-        selectedIndex = 0
+        viewControllers = TabBarFactory.createTabBarControllers()
+        selectedIndex = TabBarItem.chatIndex
     }
     
-    private func createViewController(_ viewController: UIViewController, title: String) -> UINavigationController {
-        let navController = UINavigationController(rootViewController: viewController)
-        
-        navController.navigationBar.prefersLargeTitles = false
-        
-        viewController.navigationItem.title = title
-        
-        navController.navigationBar.isTranslucent = true
-        
-        return navController
-    }
-    
-    // MARK: - Public Methods for Keyboard Handling
-    
+    // MARK: - Public Methods
     func hideCustomTabBar() {
-        UIView.animate(withDuration: 0.3) {
-            self.customTabBar.alpha = 0
-            self.customTabBar.transform = CGAffineTransform(translationX: 0, y: 100)
-        }
+        customTabBarManager.hideTabBar()
     }
     
     func showCustomTabBar() {
-        UIView.animate(withDuration: 0.3) {
-            self.customTabBar.alpha = 1
-            self.customTabBar.transform = .identity
-        }
+        customTabBarManager.showTabBar()
     }
     
     // MARK: - UITabBarControllerDelegate
-    
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
-        guard selectedViewController != viewController else {
-            return false
-        }
-
-        if let currentVC = selectedViewController {
-            currentVC.view.endEditing(true)
-        }
-
-        return true
+        guard let index = viewControllers?.firstIndex(of: viewController) else { return false }
+        return navigationManager.shouldSelectTab(at: index)
     }
-}
-
-// MARK: - CustomTabBarDelegate
-extension TabBarController: CustomTabBarDelegate {
+    
+    // MARK: - CustomTabBarManagerDelegate
     func didSelectTab(at index: Int) {
-        // Check if we're not trying to select already selected tab
-        if self.selectedIndex == index {
-            return
+        let success = navigationManager.selectTab(at: index)
+        if success {
+            HapticFeedback.impact(.light)
         }
-
-        if let currentVC = self.selectedViewController {
-            currentVC.view.endEditing(true)
-        }
-        
-        self.selectedIndex = index
     }
-}
-
-// MARK: - Public Methods for Programmatic Tab Selection
-extension TabBarController {
+    
+    func shouldSelectTab(at index: Int) -> Bool {
+        return navigationManager.shouldSelectTab(at: index)
+    }
+    
+    // MARK: - Override selectedIndex for programmatic selection
     override var selectedIndex: Int {
         didSet {
-            // When selectedIndex changes programmatically, update custom tab bar
             if selectedIndex != oldValue {
-                customTabBar.selectButton(at: selectedIndex)
+                customTabBarManager.selectTab(at: selectedIndex)
             }
         }
     }

@@ -12,12 +12,6 @@
 "History" = "History";
 "Settings" = "Settings";
 
-// Screen Titles
-"Chat Screen" = "Chat Screen";
-"IP Info Screen" = "IP Info Screen";
-"History Screen" = "History Screen";
-"Settings Screen" = "Settings Screen";
-
 // Chat Screen
 "Type a message..." = "Type a message...";
 "Hello! How can I help you today?" = "Hello! How can I help you today?";
@@ -26,9 +20,6 @@
 "Cancel" = "Cancel";
 "Start a new conversation? Current chat will be saved." = "Start a new conversation? Current chat will be saved.";
 "Start typing to begin conversation" = "Start typing to begin conversation";
-
-// Keyboard accessory
-"Done" = "Done";
 
 // History Screen
 "No Chat History" = "No Chat History";
@@ -66,8 +57,9 @@
 "loading" = "Loading...";
 "error" = "Error";
 "ok" = "OK";
+"save" = "Save";
 
-// Countries (add more as needed)
+// Countries
 "country_us" = "United States";
 "country_gb" = "United Kingdom";
 "country_de" = "Germany";
@@ -83,13 +75,9 @@
 "Contact Us" = "Contact Us";
 "Version" = "Version";
 "rate_app_message" = "How would you rate our app? Your feedback helps us improve!";
-"thank_you_good_rating" = "Thank you for your positive rating! Would you like to rate us on the App Store?";
-"Submit" = "Submit";
 "thank_you_feedback" = "Thank you for your feedback! We'll work hard to improve your experience.";
 "Thank You!" = "Thank You!";
-"Rate on App Store" = "Rate on App Store";
 "share_app_text" = "Check out this amazing app!";
-"contact_us_message" = "You can reach us at: support@example.com";
 "contact_us_fallback_message" = "Could not open the link automatically. You can copy it and open in your browser.";
 "Copy Link" = "Copy Link";
 "Copied!" = "Copied!";
