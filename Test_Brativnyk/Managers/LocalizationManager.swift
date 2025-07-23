@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 class LocalizationManager {
     static let shared = LocalizationManager()
@@ -199,7 +200,6 @@ class LocalizationManager {
         let key = "country_\(countryCode.lowercased())"
         let localized = NSLocalizedString(key, value: fallback, comment: "Country name")
         
-        // If localization is not found, return the fallback
         return localized != key ? localized : fallback
     }
 }

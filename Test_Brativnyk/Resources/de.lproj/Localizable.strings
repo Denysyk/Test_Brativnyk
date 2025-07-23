@@ -12,12 +12,6 @@
 "History" = "Verlauf";
 "Settings" = "Einstellungen";
 
-// Screen Titles
-"Chat Screen" = "Chat-Bildschirm";
-"IP Info Screen" = "IP-Info-Bildschirm";
-"History Screen" = "Verlauf-Bildschirm";
-"Settings Screen" = "Einstellungen-Bildschirm";
-
 // Chat Screen
 "Type a message..." = "Nachricht eingeben...";
 "Hello! How can I help you today?" = "Hallo! Wie kann ich Ihnen heute helfen?";
@@ -26,9 +20,6 @@
 "Cancel" = "Abbrechen";
 "Start a new conversation? Current chat will be saved." = "Neue Unterhaltung beginnen? Der aktuelle Chat wird gespeichert.";
 "Start typing to begin conversation" = "Beginnen Sie zu tippen, um das Gespräch zu starten";
-
-// Keyboard accessory
-"Done" = "Fertig";
 
 // History Screen
 "No Chat History" = "Kein Chat-Verlauf";
@@ -66,8 +57,9 @@
 "loading" = "Lädt...";
 "error" = "Fehler";
 "ok" = "OK";
+"save" = "Speichern";
 
-// Countries (add more as needed)
+// Countries
 "country_us" = "Vereinigte Staaten";
 "country_gb" = "Vereinigtes Königreich";
 "country_de" = "Deutschland";
@@ -83,13 +75,9 @@
 "Contact Us" = "Kontakt";
 "Version" = "Version";
 "rate_app_message" = "Wie würden Sie unsere App bewerten? Ihr Feedback hilft uns, uns zu verbessern!";
-"thank_you_good_rating" = "Vielen Dank für Ihre positive Bewertung! Möchten Sie uns im App Store bewerten?";
-"Submit" = "Senden";
 "thank_you_feedback" = "Vielen Dank für Ihr Feedback! Wir werden hart daran arbeiten, Ihre Erfahrung zu verbessern.";
 "Thank You!" = "Vielen Dank!";
-"Rate on App Store" = "Im App Store bewerten";
 "share_app_text" = "Schauen Sie sich diese großartige App an!";
-"contact_us_message" = "Sie können uns erreichen unter: support@example.com";
 "contact_us_fallback_message" = "Der Link konnte nicht automatisch geöffnet werden. Sie können ihn kopieren und in Ihrem Browser öffnen.";
 "Copy Link" = "Link kopieren";
 "Copied!" = "Kopiert!";
