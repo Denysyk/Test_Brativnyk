@@ -23,7 +23,7 @@ struct IPInfo: Codable {
     let org: String
     let `as`: String
     
-    // Computed properties для локалізованих значень
+    // MARK: - Computed properties 
     var localizedCountry: String {
         return NSLocalizedString("country_\(countryCode.lowercased())",
                                 value: country,
@@ -36,5 +36,40 @@ struct IPInfo: Codable {
     
     var isValid: Bool {
         return status == "success"
+    }
+    
+    // MARK: - Display Methods
+    var displayLocation: String {
+        let components = [city, regionName, country].filter { !$0.isEmpty }
+        return components.joined(separator: ", ")
+    }
+    
+    var displayRegion: String {
+        if region.isEmpty && regionName.isEmpty {
+            return NSLocalizedString("Unknown Region", comment: "")
+        }
+        return "\(region) - \(regionName)"
+    }
+    
+    var displayCountry: String {
+        let localizedName = LocalizationManager.shared.localizedCountryName(
+            for: countryCode,
+            fallback: country
+        )
+        return "\(localizedName) (\(countryCode))"
+    }
+    
+    var displayCoordinates: String {
+        return LocalizationManager.shared.formatCoordinates(
+            latitude: lat,
+            longitude: lon
+        )
+    }
+    
+    // MARK: - Validation
+    var hasValidCoordinates: Bool {
+        return abs(lat) <= 90.0 && abs(lon) <= 180.0 &&
+               lat.isFinite && lon.isFinite &&
+               !lat.isNaN && !lon.isNaN
     }
 }

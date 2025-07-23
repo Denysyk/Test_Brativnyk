@@ -62,7 +62,6 @@ class HistoryViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
-        // Кнопка очищення всієї історії
         let clearAllButton = UIButton(type: .system)
         
         var config = UIButton.Configuration.borderless()
@@ -186,16 +185,12 @@ class HistoryViewController: UIViewController {
         
         let sessionToDelete = chatSessions[index]
         
-        // Видаляємо з Core Data
         CoreDataManager.shared.deleteChatSession(sessionToDelete)
         
-        // Видаляємо з масиву
         chatSessions.remove(at: index)
         
-        // Оновлюємо UI
         tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .fade)
         
-        // Перевіряємо чи потрібно показати empty state
         if chatSessions.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.updateEmptyState()
@@ -207,16 +202,12 @@ class HistoryViewController: UIViewController {
     private func openChatSession(_ session: ChatSession) {
         guard let chatId = session.id else { return }
         
-        // Переходимо на таб чату
         if let tabBarController = tabBarController as? TabBarController {
-            // Спочатку переключаємо таб на чат (індекс 0)
             tabBarController.selectedIndex = 0
             
-            // Отримуємо ChatViewController і завантажуємо потрібний чат
             if let navController = tabBarController.viewControllers?[0] as? UINavigationController,
                let chatViewController = navController.topViewController as? ChatViewController {
                 
-                // Додаємо невелику затримку для плавного переходу та активації табу
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     chatViewController.loadChatWithId(chatId)
                 }
@@ -241,13 +232,10 @@ class HistoryViewController: UIViewController {
     }
     
     private func clearAllHistory() {
-        // Видаляємо всі дані з Core Data
         CoreDataManager.shared.deleteAllData()
         
-        // Очищуємо масив
         chatSessions.removeAll()
         
-        // Оновлюємо UI з анімацією
         UIView.animate(withDuration: 0.3) {
             self.tableView.alpha = 0
         } completion: { _ in

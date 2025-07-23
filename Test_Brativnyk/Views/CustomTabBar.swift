@@ -15,12 +15,15 @@ protocol CustomTabBarDelegate: AnyObject {
 // MARK: - CustomTabBar Class
 class CustomTabBar: UIView {
     
+    // MARK: - Properties
     weak var delegate: CustomTabBarDelegate?
     
     private var buttons: [TabBarButton] = []
     private var selectedIndex: Int = 0
     
     private let tabBarItems = TabBarItem.allItems
+    
+    // MARK: - Initialization
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -34,11 +37,12 @@ class CustomTabBar: UIView {
     
     override func didMoveToSuperview() {
         super.didMoveToSuperview()
-        // Ініціалізуємо перший таб після того, як view буде додано в ієрархію
         DispatchQueue.main.async {
             self.selectButtonInternal(at: 0)
         }
     }
+    
+    // MARK: - Setup
     
     private func setupUI() {
         backgroundColor = UIColor.clear
@@ -48,7 +52,7 @@ class CustomTabBar: UIView {
         layer.shadowRadius = 12
         layer.shadowOpacity = 0.15
         
-        // Додаємо blur effect
+        // Add blur effect
         let blurEffect = UIBlurEffect(style: .systemMaterial)
         let blurView = UIVisualEffectView(effect: blurEffect)
         blurView.layer.cornerRadius = 30
@@ -89,8 +93,9 @@ class CustomTabBar: UIView {
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             stackView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
-
     }
+    
+    // MARK: - Actions
     
     @objc private func buttonTapped(_ sender: TabBarButton) {
         let index = sender.tag
@@ -104,6 +109,8 @@ class CustomTabBar: UIView {
         impactFeedback.impactOccurred()
     }
     
+    // MARK: - Selection Management
+    
     private func selectButtonInternal(at index: Int) {
         guard index < buttons.count else { return }
         
@@ -112,14 +119,14 @@ class CustomTabBar: UIView {
         }
         
         selectedIndex = index
-        
         buttons[index].setSelected(true)
     }
     
-    // Публічний метод для програмного вибору кнопки
     func selectButton(at index: Int) {
         selectButtonInternal(at: index)
     }
+    
+    // MARK: - Theme Support
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)

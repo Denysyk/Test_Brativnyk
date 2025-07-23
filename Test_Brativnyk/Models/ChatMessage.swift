@@ -27,14 +27,12 @@ struct ChatMessage {
         self.text = text
         self.type = type
         
-        // Створюємо валідну дату
         let now = Date()
         if now.timeIntervalSince1970.isFinite &&
            !now.timeIntervalSince1970.isNaN &&
            !now.timeIntervalSince1970.isInfinite {
             self.timestamp = now
         } else {
-            // Fallback до фіксованої дати якщо поточна дата некоректна
             self.timestamp = Date(timeIntervalSince1970: 0)
         }
     }
@@ -60,12 +58,23 @@ struct ChatMessage {
         self.timestamp = timestamp
     }
     
-    // Додаткова валідація для безпеки
+ 
     var isValid: Bool {
         return !text.isEmpty &&
                !id.uuidString.isEmpty &&
                timestamp.timeIntervalSince1970.isFinite &&
                !timestamp.timeIntervalSince1970.isNaN &&
                !timestamp.timeIntervalSince1970.isInfinite
+    }
+    
+    // MARK: - Computed Properties
+    var formattedTimestamp: String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: timestamp)
+    }
+    
+    var displayText: String {
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

@@ -53,6 +53,8 @@ class NetworkService {
         return URLSession(configuration: config)
     }()
     
+    // MARK: - Public Methods
+    
     func fetchIPInfo(completion: @escaping (Result<IPInfo, NetworkError>) -> Void) {
         performIPInfoRequest(urlString: baseURL, completion: completion)
     }
@@ -61,6 +63,8 @@ class NetworkService {
         let urlString = baseURL + ip.trimmingCharacters(in: .whitespacesAndNewlines)
         performIPInfoRequest(urlString: urlString, completion: completion)
     }
+    
+    // MARK: - Private Methods
     
     private func performIPInfoRequest(urlString: String, completion: @escaping (Result<IPInfo, NetworkError>) -> Void) {
         guard let url = URL(string: urlString) else {
@@ -75,7 +79,7 @@ class NetworkService {
         request.timeoutInterval = timeout
         request.cachePolicy = .reloadIgnoringLocalCacheData
         
-        // Додаємо headers для кращої сумісності
+        // Add headers for better compatibility
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("iOS-App", forHTTPHeaderField: "User-Agent")
         
@@ -93,7 +97,7 @@ class NetworkService {
         completion: @escaping (Result<IPInfo, NetworkError>) -> Void
     ) {
         DispatchQueue.main.async {
-            // Перевіряємо наявність помилки
+            // Check for errors
             if let error = error {
                 let networkError: NetworkError
                 
@@ -107,7 +111,7 @@ class NetworkService {
                 return
             }
             
-            // Перевіряємо HTTP статус
+            // Check HTTP status
             if let httpResponse = response as? HTTPURLResponse {
                 guard (200...299).contains(httpResponse.statusCode) else {
                     completion(.failure(.invalidResponse))
@@ -115,17 +119,17 @@ class NetworkService {
                 }
             }
             
-            // Перевіряємо наявність даних
+            // Check data availability
             guard let data = data, !data.isEmpty else {
                 completion(.failure(.noData))
                 return
             }
             
-            // Декодуємо JSON
+            // Decode JSON
             do {
                 let ipInfo = try self.decodeIPInfo(from: data)
                 
-                // Перевіряємо валідність отриманих даних
+                // Validate received data
                 guard ipInfo.isValid else {
                     completion(.failure(.decodingError))
                     return
@@ -134,7 +138,6 @@ class NetworkService {
                 completion(.success(ipInfo))
                 
             } catch {
-                print("Decoding error: \(error)")
                 completion(.failure(.decodingError))
             }
         }
@@ -142,10 +145,7 @@ class NetworkService {
     
     private func decodeIPInfo(from data: Data) throws -> IPInfo {
         let decoder = JSONDecoder()
-        
-        // Додаємо стратегію для невідомих ключів
         decoder.keyDecodingStrategy = .useDefaultKeys
-        
         return try decoder.decode(IPInfo.self, from: data)
     }
 }
@@ -154,7 +154,7 @@ class NetworkService {
 extension NetworkService {
     
     var isNetworkAvailable: Bool {
-        // Простий спосіб перевірки доступності мережі
+        // Simple network availability check
         var zeroAddress = sockaddr_in()
         zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
         zeroAddress.sin_family = sa_family_t(AF_INET)

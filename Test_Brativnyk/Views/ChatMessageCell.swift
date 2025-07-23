@@ -17,7 +17,7 @@ class ChatMessageCell: UITableViewCell {
     private let avatarImageView = UIImageView()
     
     // MARK: - Constraints Properties
-    // Створюємо масиви для зберігання констрейнтів, які будуть змінюватися
+    // Create arrays to store constraints that will change
     private var userMessageConstraints: [NSLayoutConstraint] = []
     private var botMessageConstraints: [NSLayoutConstraint] = []
     
@@ -36,20 +36,20 @@ class ChatMessageCell: UITableViewCell {
         backgroundColor = .clear
         selectionStyle = .none
         
-        // --- Додаємо всі UI елементи до contentView ОДИН РАЗ ---
+        // Add all UI elements to contentView ONCE
         contentView.addSubview(avatarImageView)
         contentView.addSubview(messageContainerView)
         contentView.addSubview(timeLabel)
         messageContainerView.addSubview(messageLabel)
         
-        // --- Налаштовуємо зовнішній вигляд елементів ---
+        // Configure element appearance
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         avatarImageView.contentMode = .scaleAspectFit
         avatarImageView.layer.cornerRadius = 16.0
         avatarImageView.clipsToBounds = true
         
         messageContainerView.translatesAutoresizingMaskIntoConstraints = false
-        messageContainerView.layer.cornerRadius = 18.0 // Зробимо трохи кругліше
+        messageContainerView.layer.cornerRadius = 18.0
         
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.numberOfLines = 0
@@ -59,35 +59,35 @@ class ChatMessageCell: UITableViewCell {
         timeLabel.font = UIFont.systemFont(ofSize: 12)
         timeLabel.textColor = UIColor.systemGray
         
-        // --- Створюємо Спільні констрейнти (які не змінюються) ---
+        // Create shared constraints (that don't change)
         NSLayoutConstraint.activate([
             avatarImageView.widthAnchor.constraint(equalToConstant: 32),
             avatarImageView.heightAnchor.constraint(equalToConstant: 32),
             avatarImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             
             messageContainerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            // Обмежуємо ширину, щоб повідомлення не розтягувалось на весь екран
+            // Limit width so messages don't stretch across entire screen
             messageContainerView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.75),
             
-            // Констрейнти для messageLabel всередині messageContainerView
+            // Constraints for messageLabel inside messageContainerView
             messageLabel.topAnchor.constraint(equalTo: messageContainerView.topAnchor, constant: 12),
             messageLabel.leadingAnchor.constraint(equalTo: messageContainerView.leadingAnchor, constant: 16),
             messageLabel.trailingAnchor.constraint(equalTo: messageContainerView.trailingAnchor, constant: -16),
             messageLabel.bottomAnchor.constraint(equalTo: messageContainerView.bottomAnchor, constant: -12),
             
-            // Констрейнти для timeLabel відносно messageContainerView
+            // Constraints for timeLabel relative to messageContainerView
             timeLabel.topAnchor.constraint(equalTo: messageContainerView.bottomAnchor, constant: 4),
             contentView.bottomAnchor.constraint(equalTo: timeLabel.bottomAnchor, constant: 8)
         ])
         
-        // --- Визначаємо констрейнти для повідомлення БОТА (зліва) ---
+        // Define constraints for BOT messages (left side)
         botMessageConstraints = [
             avatarImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             messageContainerView.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 8),
             timeLabel.leadingAnchor.constraint(equalTo: messageContainerView.leadingAnchor)
         ]
         
-        // --- Визначаємо констрейнти для повідомлення ЮЗЕРА (справа) ---
+        // Define constraints for USER messages (right side)
         userMessageConstraints = [
             avatarImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             messageContainerView.trailingAnchor.constraint(equalTo: avatarImageView.leadingAnchor, constant: -8),
@@ -107,25 +107,25 @@ class ChatMessageCell: UITableViewCell {
     }
     
     private func updateLayoutAndAppearance(for type: MessageType) {
-        // Деактивуємо всі змінні констрейнти перед налаштуванням
+        // Deactivate all variable constraints before setup
         NSLayoutConstraint.deactivate(userMessageConstraints)
         NSLayoutConstraint.deactivate(botMessageConstraints)
 
         if type == .user {
-            // Активуємо констрейнти для юзера
+            // Activate constraints for user
             NSLayoutConstraint.activate(userMessageConstraints)
             
-            // Налаштовуємо вигляд для юзера
+            // Configure appearance for user
             messageContainerView.backgroundColor = UIColor.systemGreen
             messageLabel.textColor = .white
             avatarImageView.image = UIImage(systemName: "person.circle.fill")
             avatarImageView.tintColor = UIColor.systemGreen
             
         } else { // .bot
-            // Активуємо констрейнти для бота
+            // Activate constraints for bot
             NSLayoutConstraint.activate(botMessageConstraints)
             
-            // Налаштовуємо вигляд для бота
+            // Configure appearance for bot
             if traitCollection.userInterfaceStyle == .dark {
                 messageContainerView.backgroundColor = UIColor.systemGray5
                 messageLabel.textColor = .white
@@ -148,7 +148,7 @@ class ChatMessageCell: UITableViewCell {
         super.traitCollectionDidChange(previousTraitCollection)
         
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            // Визначаємо поточний тип повідомлення за активними констрейнтами та оновлюємо кольори
+            // Determine current message type by active constraints and update colors
             if userMessageConstraints.first?.isActive == true {
                 updateLayoutAndAppearance(for: .user)
             } else if botMessageConstraints.first?.isActive == true {

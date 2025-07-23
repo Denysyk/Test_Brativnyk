@@ -154,7 +154,7 @@ class HistoryCell: UITableViewCell {
         // Title
         titleLabel.text = chatSession.title ?? NSLocalizedString("New Chat", comment: "")
         
-        // Subtitle (перше повідомлення або опис)
+        // Subtitle (first message or description)
         if let messages = chatSession.messages as? Set<Message>,
            let firstMessage = messages.sorted(by: { $0.timestamp ?? Date() < $1.timestamp ?? Date() }).first {
             let messageText = firstMessage.text ?? ""
@@ -163,7 +163,7 @@ class HistoryCell: UITableViewCell {
             subtitleLabel.text = NSLocalizedString("No messages", comment: "")
         }
         
-        // Time - показуємо дату оновлення чату в форматі дд.мм.рррр
+        // Time - show chat update date in dd.mm.yyyy format
         if let updatedAt = chatSession.updatedAt {
             timeLabel.text = formatDateExact(updatedAt)
         } else {
@@ -179,7 +179,7 @@ class HistoryCell: UITableViewCell {
             messageCountLabel.isHidden = true
         }
         
-        // Уніфіковані іконки - всі зелені
+        // Unified icons - all green
         iconImageView.image = UIImage(systemName: "message.circle.fill")
         iconImageView.tintColor = UIColor.systemGreen
     }

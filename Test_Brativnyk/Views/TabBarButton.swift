@@ -9,23 +9,25 @@ import UIKit
 
 class TabBarButton: UIButton {
     
+    // MARK: - UI Elements
     private let iconImageView = UIImageView()
     private let customTitleLabel = UILabel()
     private let backgroundView = UIView()
     
+    // MARK: - Properties
     private var isSelectedState = false
     private let buttonTitle: String
     private let normalIcon: String
     private let selectedIcon: String
     
-    // Constraints для анімації
+    // Constraints for animation
     private var widthConstraint: NSLayoutConstraint!
-    private var iconCenterXConstraint: NSLayoutConstraint?
-    private var iconLeadingConstraint: NSLayoutConstraint?
     
-    // Container view для центрування контенту
+    // Container view for centering content
     private let contentContainer = UIView()
     private let stackView = UIStackView()
+    
+    // MARK: - Initialization
     
     init(icon: String, selectedIcon: String, title: String) {
         self.buttonTitle = title
@@ -42,31 +44,33 @@ class TabBarButton: UIButton {
         super.init(coder: coder)
     }
     
+    // MARK: - Setup
+    
     private func setupButton(icon: String, title: String) {
-        // Background view для овального виділення
+        // Background view for oval selection
         backgroundView.isUserInteractionEnabled = false
         backgroundView.backgroundColor = UIColor.clear
         backgroundView.layer.cornerRadius = 20
         addSubview(backgroundView)
         
-        // Container для контенту
+        // Container for content
         contentContainer.isUserInteractionEnabled = false
         addSubview(contentContainer)
         
-        // Stack view для горизонтального розташування іконки та тексту
+        // Stack view for horizontal layout of icon and text
         stackView.axis = .horizontal
         stackView.spacing = 5
         stackView.alignment = .center
         stackView.distribution = .fill
         contentContainer.addSubview(stackView)
         
-        // Іконка
+        // Icon
         iconImageView.image = UIImage(systemName: icon)
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.tintColor = getUnselectedIconColor()
         stackView.addArrangedSubview(iconImageView)
         
-        // Заголовок
+        // Title
         customTitleLabel.text = NSLocalizedString(title, comment: "")
         customTitleLabel.font = UIFont.systemFont(ofSize: 13, weight: .medium)
         customTitleLabel.textColor = getSelectedTextColor()
@@ -82,16 +86,16 @@ class TabBarButton: UIButton {
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
         stackView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Основні constraints для button
+        // Basic constraints for button
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: 48)
         ])
         
-        // Width constraint - змінюється для анімації
+        // Width constraint - changes for animation
         widthConstraint = widthAnchor.constraint(equalToConstant: 60)
         widthConstraint.isActive = true
         
-        // Background view - заповнює всю кнопку
+        // Background view - fills entire button
         NSLayoutConstraint.activate([
             backgroundView.centerXAnchor.constraint(equalTo: centerXAnchor),
             backgroundView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -99,7 +103,7 @@ class TabBarButton: UIButton {
             backgroundView.heightAnchor.constraint(equalToConstant: 40)
         ])
         
-        // Content container - центрується в background view
+        // Content container - centered in background view
         NSLayoutConstraint.activate([
             contentContainer.centerXAnchor.constraint(equalTo: backgroundView.centerXAnchor),
             contentContainer.centerYAnchor.constraint(equalTo: backgroundView.centerYAnchor),
@@ -107,7 +111,7 @@ class TabBarButton: UIButton {
             contentContainer.trailingAnchor.constraint(lessThanOrEqualTo: backgroundView.trailingAnchor, constant: -8)
         ])
         
-        // Stack view заповнює container
+        // Stack view fills container
         NSLayoutConstraint.activate([
             stackView.topAnchor.constraint(equalTo: contentContainer.topAnchor),
             stackView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
@@ -121,13 +125,15 @@ class TabBarButton: UIButton {
             iconImageView.heightAnchor.constraint(equalToConstant: 20)
         ])
         
-        // Встановлюємо пріоритети
+        // Set priorities
         customTitleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         customTitleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
-        // Ховаємо текст в неактивному стані
+        // Hide text in inactive state
         customTitleLabel.isHidden = true
     }
+    
+    // MARK: - Color Methods
     
     private func getSelectedBackgroundColor() -> UIColor {
         if traitCollection.userInterfaceStyle == .dark {
@@ -157,67 +163,71 @@ class TabBarButton: UIButton {
         return UIColor.systemGray
     }
     
+    // MARK: - Selection State
+    
     func setSelected(_ selected: Bool) {
         isSelectedState = selected
         
         if selected {
-            // Спочатку змінюємо іконку та кольори
+            // First change icon and colors
             iconImageView.image = UIImage(systemName: selectedIcon)
             iconImageView.tintColor = getSelectedIconColor()
             customTitleLabel.textColor = getSelectedTextColor()
             
-            // ФІКСОВАНА ширина для всіх виділених кнопок
+            // Fixed width for all selected buttons
             let fixedWidth: CGFloat = 140
             
-            // Анімація розширення
+            // Expansion animation
             UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.2, options: [.curveEaseInOut]) {
                 
-                // Змінюємо ширину кнопки на фіксовану
+                // Change button width to fixed
                 self.widthConstraint.constant = fixedWidth
                 
-                // Змінюємо радіус background
+                // Change background radius
                 self.backgroundView.layer.cornerRadius = 20
                 
-                // Фон
+                // Background
                 self.backgroundView.backgroundColor = self.getSelectedBackgroundColor()
                 
-                // Оновлюємо layout
+                // Update layout
                 self.superview?.layoutIfNeeded()
             }
             
-            // Анімація появи тексту
+            // Text appearance animation
             UIView.animate(withDuration: 0.15, delay: 0.15) {
                 self.customTitleLabel.isHidden = false
                 self.customTitleLabel.alpha = 1
             }
             
         } else {
-            // Ховаємо текст
+            // Hide text
             UIView.animate(withDuration: 0.2) {
                 self.customTitleLabel.alpha = 0
             } completion: { _ in
                 self.customTitleLabel.isHidden = true
             }
             
-            // Анімація стиснення
+            // Compression animation
             UIView.animate(withDuration: 0.3, delay: 0.1, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.2) {
                 
-                // Повертаємо до стандартної ширини
+                // Return to standard width
                 self.widthConstraint.constant = 60
                 
-                // Прибираємо фон
+                // Remove background
                 self.backgroundView.backgroundColor = UIColor.clear
                 
-                // Оновлюємо layout
+                // Update layout
                 self.superview?.layoutIfNeeded()
                 
             } completion: { _ in
-                // Змінюємо іконку назад
+                // Change icon back
                 self.iconImageView.image = UIImage(systemName: self.normalIcon)
                 self.iconImageView.tintColor = self.getUnselectedIconColor()
             }
         }
     }
+    
+    // MARK: - Touch Handling
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
@@ -242,6 +252,8 @@ class TabBarButton: UIButton {
             self.transform = .identity
         }
     }
+    
+    // MARK: - Theme Support
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
