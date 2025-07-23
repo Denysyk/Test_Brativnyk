@@ -42,14 +42,11 @@ class ChatViewController: UIViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        // Простого resignFirstResponder тут достатньо.
-        // TabBarController візьме на себе більш глибоке очищення.
         textView.resignFirstResponder()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        // Додаткова підстраховка без агресивних викликів
         textView.resignFirstResponder()
     }
     
@@ -100,9 +97,7 @@ class ChatViewController: UIViewController {
     }
     
     deinit {
-        // Очищуємо observer'и при знищенні
         NotificationCenter.default.removeObserver(self)
-        // При deinit можемо очистити accessory view
         textView.inputAccessoryView = nil
     }
     
@@ -188,11 +183,9 @@ class ChatViewController: UIViewController {
         textView.smartInsertDeleteType = .no
         textView.contentMode = .topLeft
         
-        // ВАЖЛИВО: Встановлюємо returnKeyType для кращої обробки
         textView.returnKeyType = .send
         textView.enablesReturnKeyAutomatically = true
         
-        // Додаємо кнопку закриття клавіатури
         setupKeyboardAccessoryView()
         
         inputContainerView.addSubview(textView)
@@ -204,18 +197,15 @@ class ChatViewController: UIViewController {
     }
     
     private func createKeyboardAccessoryView() -> UIView {
-        // Створюємо container для accessory view
         let accessoryContainer = UIView()
         accessoryContainer.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.95)
         accessoryContainer.translatesAutoresizingMaskIntoConstraints = false
         
-        // Додаємо blur effect для красивого вигляду
         let blurEffect = UIBlurEffect(style: .systemMaterial)
         let blurView = UIVisualEffectView(effect: blurEffect)
         blurView.translatesAutoresizingMaskIntoConstraints = false
         accessoryContainer.addSubview(blurView)
         
-        // Створюємо кнопку закриття клавіатури
         let dismissButton = UIButton(type: .system)
         dismissButton.setImage(UIImage(systemName: "keyboard.chevron.compact.down"), for: .normal)
         dismissButton.tintColor = UIColor.label
@@ -224,40 +214,33 @@ class ChatViewController: UIViewController {
         dismissButton.layer.masksToBounds = true
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
         
-        // Додаємо haptic feedback та анімацію
         dismissButton.addTarget(self, action: #selector(keyboardDismissButtonTapped), for: .touchUpInside)
         dismissButton.addTarget(self, action: #selector(dismissButtonTouchDown), for: .touchDown)
         dismissButton.addTarget(self, action: #selector(dismissButtonTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
         
         accessoryContainer.addSubview(dismissButton)
         
-        // Створюємо separator лінію
         let separatorLine = UIView()
         separatorLine.backgroundColor = UIColor.separator
         separatorLine.translatesAutoresizingMaskIntoConstraints = false
         accessoryContainer.addSubview(separatorLine)
         
-        // Встановлюємо constraints
         NSLayoutConstraint.activate([
-            // Blur view заповнює весь container
             blurView.topAnchor.constraint(equalTo: accessoryContainer.topAnchor),
             blurView.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
             blurView.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor),
             blurView.bottomAnchor.constraint(equalTo: accessoryContainer.bottomAnchor),
             
-            // Separator лінія зверху
             separatorLine.topAnchor.constraint(equalTo: accessoryContainer.topAnchor),
             separatorLine.leadingAnchor.constraint(equalTo: accessoryContainer.leadingAnchor),
             separatorLine.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor),
             separatorLine.heightAnchor.constraint(equalToConstant: 0.5),
             
-            // Кнопка закриття справа
             dismissButton.trailingAnchor.constraint(equalTo: accessoryContainer.trailingAnchor, constant: -16),
             dismissButton.centerYAnchor.constraint(equalTo: accessoryContainer.centerYAnchor),
             dismissButton.widthAnchor.constraint(equalToConstant: 44),
             dismissButton.heightAnchor.constraint(equalToConstant: 32),
             
-            // Висота всього accessory view
             accessoryContainer.heightAnchor.constraint(equalToConstant: 50)
         ])
         
@@ -396,7 +379,6 @@ class ChatViewController: UIViewController {
             chatId = sessionId
             loadMessages()
             
-            // Додаємо прокрутку до низу після завантаження повідомлень
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 self.scrollToBottomWithoutAnimation()
             }
@@ -673,10 +655,8 @@ class ChatViewController: UIViewController {
     }
     
     @objc private func newChatButtonTapped() {
-        // Простіше закриття клавіатури
         textView.resignFirstResponder()
         
-        // Додаємо мінімальну затримку перед показом алерту
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             if !self.messages.isEmpty {
                 let alert = UIAlertController(
@@ -720,7 +700,6 @@ class ChatViewController: UIViewController {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Простіше закриття клавіатури
         textView.resignFirstResponder()
     }
     

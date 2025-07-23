@@ -199,8 +199,6 @@ class ThemeManager {
     
     // MARK: - Dynamic Color Updates
     func updateColorsForTraitCollection(_ traitCollection: UITraitCollection) {
-        // This method can be called when the user interface style changes
-        // to update any cached colors or styles
         NotificationCenter.default.post(name: .themeDidChange, object: nil)
     }
 }

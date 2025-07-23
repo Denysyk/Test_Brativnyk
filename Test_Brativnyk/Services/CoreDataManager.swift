@@ -33,7 +33,10 @@ class CoreDataManager {
             do {
                 try context.save()
             } catch {
+                // Log error in debug mode only
+                #if DEBUG
                 print("Save context error: \(error)")
+                #endif
             }
         }
     }
@@ -60,7 +63,9 @@ class CoreDataManager {
             let sessions = try context.fetch(request)
             return sessions.first
         } catch {
+            #if DEBUG
             print("Error fetching chat session: \(error)")
+            #endif
             return nil
         }
     }
@@ -80,7 +85,9 @@ class CoreDataManager {
         do {
             return try context.fetch(request)
         } catch {
+            #if DEBUG
             print("Error fetching chat sessions: \(error)")
+            #endif
             return []
         }
     }
@@ -94,7 +101,9 @@ class CoreDataManager {
             let sessions = try context.fetch(request)
             return sessions.first
         } catch {
+            #if DEBUG
             print("Error fetching last chat session: \(error)")
+            #endif
             return nil
         }
     }
@@ -123,11 +132,11 @@ class CoreDataManager {
         messageEntity.timestamp = message.timestamp
         messageEntity.chatSession = chatSession
         
-        // Оновлюємо дату оновлення чату при додаванні нового повідомлення
+        // Update chat session updated date when adding new message
         let currentDate = Date()
         chatSession.updatedAt = currentDate
         
-        // Якщо це перше повідомлення, встановлюємо його як title
+        // If this is the first message, set it as title
         if chatSession.messages?.count == 0 || chatSession.title == NSLocalizedString("New Chat", comment: "") {
             let titleText = String(message.text.prefix(50))
             chatSession.title = titleText.isEmpty ? NSLocalizedString("New Chat", comment: "") : titleText
@@ -135,7 +144,7 @@ class CoreDataManager {
         
         saveContext()
         
-        // Відправляємо нотифікацію для оновлення історії
+        // Send notification to update history
         DispatchQueue.main.async {
             NotificationCenter.default.post(
                 name: NSNotification.Name("ChatSessionUpdated"),
@@ -178,15 +187,13 @@ class CoreDataManager {
         }
     }
     
-    // MARK: - Update Chat Session When Opened
-    
     func deleteMessage(_ message: Message) {
-        // Отримуємо чат сесію перед видаленням повідомлення
+        // Get chat session before deleting message
         let chatSession = message.chatSession
         
         context.delete(message)
         
-        // Якщо це була сесія, оновлюємо її дату до поточної
+        // If it was a session, update its date to current
         if let session = chatSession {
             session.updatedAt = Date()
         }

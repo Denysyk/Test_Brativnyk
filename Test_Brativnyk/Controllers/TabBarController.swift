@@ -18,11 +18,13 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
         setupViewControllers()
     }
     
+    // MARK: - Setup Methods
+    
     private func setupCustomTabBar() {
-        // Ховаємо стандартний TabBar
+        // Hide standard TabBar
         self.tabBar.isHidden = true
         
-        // Створюємо кастомний TabBar
+        // Create custom TabBar
         customTabBar = CustomTabBar()
         customTabBar.delegate = self
         
@@ -65,19 +67,17 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
     private func createViewController(_ viewController: UIViewController, title: String) -> UINavigationController {
         let navController = UINavigationController(rootViewController: viewController)
         
-        // Вимикаємо великі заголовки
         navController.navigationBar.prefersLargeTitles = false
         
-        // Встановлюємо звичайний заголовок
         viewController.navigationItem.title = title
         
-        // Додаткові налаштування навігаційного бара
         navController.navigationBar.isTranslucent = true
         
         return navController
     }
     
     // MARK: - Public Methods for Keyboard Handling
+    
     func hideCustomTabBar() {
         UIView.animate(withDuration: 0.3) {
             self.customTabBar.alpha = 0
@@ -93,38 +93,32 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
     }
     
     // MARK: - UITabBarControllerDelegate
-    // КРИТИЧНО ВАЖЛИВО: Цей метод закриває input sessions ДО переходу
+    
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
-        // 1. Перевіряємо, чи ми не намагаємося вибрати вже вибрану вкладку
         guard selectedViewController != viewController else {
             return false
         }
 
-        // 2. КРИТИЧНО ВАЖЛИВО: закриваємо input sessions ДО переходу
         if let currentVC = selectedViewController {
             currentVC.view.endEditing(true)
         }
 
-        // 3. Дозволяємо перехід. Система сама обробить решту.
         return true
     }
 }
 
 // MARK: - CustomTabBarDelegate
 extension TabBarController: CustomTabBarDelegate {
-    // КРИТИЧНО: Закриваємо input sessions при переході через custom tab bar
     func didSelectTab(at index: Int) {
-        // Перевіряємо, чи ми не намагаємося вибрати вже вибрану вкладку
+        // Check if we're not trying to select already selected tab
         if self.selectedIndex == index {
             return
         }
 
-        // КРИТИЧНО: закриваємо input sessions ДО зміни індексу
         if let currentVC = self.selectedViewController {
             currentVC.view.endEditing(true)
         }
         
-        // Тепер змінюємо індекс
         self.selectedIndex = index
     }
 }
@@ -133,7 +127,7 @@ extension TabBarController: CustomTabBarDelegate {
 extension TabBarController {
     override var selectedIndex: Int {
         didSet {
-            // Коли selectedIndex змінюється програмно, оновлюємо кастомний таб бар
+            // When selectedIndex changes programmatically, update custom tab bar
             if selectedIndex != oldValue {
                 customTabBar.selectButton(at: selectedIndex)
             }

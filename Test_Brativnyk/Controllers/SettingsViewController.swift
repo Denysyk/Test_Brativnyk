@@ -34,8 +34,6 @@ class SettingsViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Цей виклик гарантує, що якщо клавіатура з якоїсь причини
-        // все ще активна, вона буде прихована при появі екрана налаштувань.
         self.view.endEditing(true)
     }
     
@@ -105,15 +103,13 @@ class SettingsViewController: UIViewController {
     
     // MARK: - Actions
     private func rateApp() {
-        // Простіше закриття input sessions
         view.endEditing(true)
         
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Мінімальна затримка перед показом алерту
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             self.showSimpleStarRating()
         }
     }
@@ -129,8 +125,7 @@ class SettingsViewController: UIViewController {
         for i in 1...5 {
             let stars = String(repeating: "★", count: i)
             let action = UIAlertAction(title: stars, style: .default) { _ in
-                // Мінімальна затримка перед наступним алертом
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
                     self.showSimpleThankYou()
                 }
             }
@@ -154,7 +149,6 @@ class SettingsViewController: UIViewController {
     }
     
     private func shareApp() {
-        // Простіше закриття input sessions
         view.endEditing(true)
         
         // Haptic feedback
@@ -165,7 +159,6 @@ class SettingsViewController: UIViewController {
         let githubURL = "https://github.com/Denysyk/Test_Brativnyk"
         let fullText = "\(shareText)\n\n\(githubURL)"
         
-        // Мінімальна затримка
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             let activityViewController = UIActivityViewController(
                 activityItems: [fullText],
@@ -179,7 +172,6 @@ class SettingsViewController: UIViewController {
                 .openInIBooks
             ]
             
-            // Для iPad
             if let popover = activityViewController.popoverPresentationController {
                 popover.sourceView = self.view
                 popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
@@ -191,7 +183,6 @@ class SettingsViewController: UIViewController {
     }
     
     private func contactUs() {
-        // Простіше закриття input sessions
         view.endEditing(true)
         
         // Haptic feedback
@@ -273,12 +264,10 @@ extension SettingsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        // Простіше закриття input sessions
         view.endEditing(true)
         
         let item = settingsItems[indexPath.row]
         
-        // Мінімальна затримка
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             item.action()
         }

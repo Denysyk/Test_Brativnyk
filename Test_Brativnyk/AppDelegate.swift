@@ -12,8 +12,6 @@ import MapKit
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         setupMinimalOptimizations()
@@ -23,9 +21,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     private func setupMinimalOptimizations() {
         #if DEBUG
+        // Suppress stderr output in debug mode to reduce console noise
         freopen("/dev/null", "w", stderr)
         #endif
         
+        // Global map optimizations
         MKMapView.appearance().showsBuildings = false
         MKMapView.appearance().showsTraffic = false
     }
@@ -88,6 +88,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
     }
-
 }
-

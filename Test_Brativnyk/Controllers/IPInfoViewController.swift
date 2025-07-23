@@ -47,15 +47,12 @@ class IPInfoViewController: UIViewController {
     private var currentIPInfo: IPInfo?
     private var mapAnnotation: IPInfoAnnotation?
     
-    // ВАЖЛИВО: Ліниво ініціалізуємо карту з оптимізованими налаштуваннями
     private lazy var mapView: MKMapView = {
         let mapView = MKMapView()
-        // Оптимізовані налаштування для зменшення системних попереджень
         mapView.setupForIPLocationOptimized()
         mapView.delegate = self.mapHelper
         mapView.isHidden = true
         
-        // Додаткові оптимізації
         mapView.isPitchEnabled = false
         mapView.isRotateEnabled = false
         mapView.showsBuildings = false
@@ -69,7 +66,6 @@ class IPInfoViewController: UIViewController {
             config.pointOfInterestFilter = .excludingAll
             mapView.preferredConfiguration = config
         } else {
-            // Fallback для старіших версій iOS
             mapView.pointOfInterestFilter = .excludingAll
         }
         
@@ -85,7 +81,6 @@ class IPInfoViewController: UIViewController {
         setupConstraints()
         setupNavigationBar()
         
-        // Затримуємо завантаження даних для кращої ініціалізації карти
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.loadIPInfo()
         }
@@ -97,7 +92,6 @@ class IPInfoViewController: UIViewController {
     }
     
     deinit {
-        // Правильно очищуємо карту при знищенні
         mapView.delegate = nil
         mapView.removeAnnotations(mapView.annotations)
     }
@@ -115,7 +109,6 @@ class IPInfoViewController: UIViewController {
         // Content View
         scrollView.addSubview(contentView)
         
-        // Map View - додаємо до ієрархії тільки коли потрібно
         contentView.addSubview(mapView)
 
         // Info Container
@@ -418,14 +411,12 @@ class IPInfoViewController: UIViewController {
     }
 
     private func updateMap(with ipInfo: IPInfo) {
-        // Очищуємо попередні анотації
         if let existingAnnotation = mapAnnotation {
             mapView.removeAnnotation(existingAnnotation)
         }
         
         let annotation = IPInfoAnnotation(ipInfo: ipInfo)
         
-        // Перевіряємо валідність координат
         guard annotation.coordinate.isValid else {
             print("Invalid coordinates for map annotation")
             return
@@ -434,19 +425,16 @@ class IPInfoViewController: UIViewController {
         mapView.addAnnotation(annotation)
         mapAnnotation = annotation
         
-        // ВАЖЛИВО: Встановлюємо більш обмежений регіон для зменшення mesh помилок
-        let limitedRadius: CLLocationDistance = 25000 // 25km замість 50km
+        let limitedRadius: CLLocationDistance = 25000
         let safeRegion = MKCoordinateRegion(
             center: annotation.coordinate,
             latitudinalMeters: limitedRadius,
             longitudinalMeters: limitedRadius
         )
         
-        // Встановлюємо регіон з більшою затримкою для стабільності
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             self.mapView.setRegion(safeRegion, animated: true)
             
-            // Виділяємо анотацію з ще більшою затримкою
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 self.mapView.selectAnnotation(annotation, animated: true)
             }
