@@ -306,6 +306,7 @@ extension ChatViewController: ChatInputManagerDelegate {
 }
 
 // MARK: - KeyboardManagerDelegate
+// MARK: - KeyboardManagerDelegate
 extension ChatViewController: KeyboardManagerDelegate {
     func keyboardWillShow(height: CGFloat, duration: TimeInterval) {
         inputManager.adjustForKeyboard(height: height, duration: duration)
@@ -329,3 +330,4 @@ extension ChatViewController: KeyboardManagerDelegate {
         (tabBarController as? TabBarController)?.showCustomTabBar()
     }
 }
+  

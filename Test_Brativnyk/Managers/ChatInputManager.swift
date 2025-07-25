@@ -25,9 +25,20 @@ class ChatInputManager: NSObject {
     private let minHeight: CGFloat = 44
     private let maxHeight: CGFloat = 120
     
+    // Hardware keyboard detection
+    private var keyboardObserver: NSObjectProtocol?
+    private var hasSetAccessoryView = false
+    
     override init() {
         super.init()
         setupUI()
+        setupKeyboardObserver()
+    }
+    
+    deinit {
+        if let observer = keyboardObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
     
     private func setupUI() {
@@ -36,7 +47,6 @@ class ChatInputManager: NSObject {
         setupTextView()
         setupSendButton()
         setupPlaceholder()
-        setupAccessoryView()
     }
     
     private func setupTextView() {
@@ -51,6 +61,9 @@ class ChatInputManager: NSObject {
         textView.isScrollEnabled = false
         textView.returnKeyType = .send
         textView.enablesReturnKeyAutomatically = true
+        
+        // Start with no accessory view
+        textView.inputAccessoryView = nil
         
         containerView.addSubview(textView)
     }
@@ -73,7 +86,39 @@ class ChatInputManager: NSObject {
         textView.addSubview(placeholderLabel)
     }
     
-    private func setupAccessoryView() {
+    private func setupKeyboardObserver() {
+        keyboardObserver = NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillShowNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleKeyboardWillShow(notification)
+        }
+    }
+    
+    private func handleKeyboardWillShow(_ notification: Notification) {
+        guard !hasSetAccessoryView,
+              let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
+            return
+        }
+        
+        let isHardwareKeyboard = detectHardwareKeyboard(height: keyboardFrame.height)
+        
+        if !isHardwareKeyboard {
+            // Only set accessory view for software keyboards
+            createAccessoryView()
+            textView.reloadInputViews()
+        }
+        
+        hasSetAccessoryView = true
+    }
+    
+    private func detectHardwareKeyboard(height: CGFloat) -> Bool {
+        let screenHeight = UIScreen.main.bounds.height
+        return height < 100 || height < screenHeight * 0.15
+    }
+    
+    private func createAccessoryView() {
         let accessoryHeight: CGFloat = 40
         textView.inputAccessoryView = KeyboardAccessoryView(height: accessoryHeight) { [weak self] in
             self?.textView.resignFirstResponder()
@@ -87,7 +132,6 @@ class ChatInputManager: NSObject {
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
         
-        // Повертаємо оригінальний відступ від табу
         containerBottomConstraint = containerView.bottomAnchor.constraint(
             equalTo: view.safeAreaLayoutGuide.bottomAnchor,
             constant: -100
@@ -118,10 +162,9 @@ class ChatInputManager: NSObject {
     
     func adjustForKeyboard(height: CGFloat, duration: TimeInterval) {
         if height == 0 {
-            // Клавіатура ховається - повертаємось над tab bar
             containerBottomConstraint.constant = -100
+            hasSetAccessoryView = false // Reset for next keyboard appearance
         } else {
-            // Клавіатура з'являється - розташовуємо над клавіатурою
             let safeAreaBottom = containerView.superview?.safeAreaInsets.bottom ?? 0
             containerBottomConstraint.constant = -height - 8 + safeAreaBottom
         }

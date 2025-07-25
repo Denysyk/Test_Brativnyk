@@ -41,7 +41,12 @@ class KeyboardManager {
             return
         }
         
-        delegate?.keyboardWillShow(height: keyboardFrame.height, duration: duration)
+        // Detect hardware keyboard and don't trigger delegate if it's hardware keyboard
+        let isHardwareKeyboard = detectHardwareKeyboard(height: keyboardFrame.height)
+        
+        if !isHardwareKeyboard {
+            delegate?.keyboardWillShow(height: keyboardFrame.height, duration: duration)
+        }
     }
     
     @objc private func keyboardWillHide(_ notification: Notification) {
@@ -50,5 +55,18 @@ class KeyboardManager {
         }
         
         delegate?.keyboardWillHide(duration: duration)
+    }
+    
+    private func detectHardwareKeyboard(height: CGFloat) -> Bool {
+        let screenHeight = UIScreen.main.bounds.height
+        
+        return height < 100 || // Very small height
+               height < screenHeight * 0.15 || // Less than 15% of screen
+               isKnownHardwareKeyboardHeight(height)
+    }
+    
+    private func isKnownHardwareKeyboardHeight(_ height: CGFloat) -> Bool {
+        let knownHeights: [CGFloat] = [44, 55, 69, 75, 85, 90, 95]
+        return knownHeights.contains { abs($0 - height) < 10 }
     }
 }
